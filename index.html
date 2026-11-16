@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>나의 손글씨 폰트 만들기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f3ec;--card:#fffdf8;--ink:#23211c;--muted:#7a756a;--line:#e3ddcf;--grid:#e9b9a8;--c:#2f6fde;--v:#169a5a;--f:#e0791b;--accent:#23211c}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'Noto Sans KR',system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
+body{overscroll-behavior:none}
+header{display:flex;align-items:center;gap:16px;padding:12px 18px;border-bottom:1px solid var(--line);background:var(--card);position:sticky;top:0;z-index:5;flex-wrap:wrap}
+h1{font-size:19px;margin:0;font-weight:700;letter-spacing:-.3px}
+h1 small{font-weight:400;color:var(--muted);font-size:13px;margin-left:6px}
+nav{display:flex;gap:4px;margin-left:auto;background:var(--bg);padding:4px;border-radius:12px}
+nav button{border:0;background:transparent;padding:9px 16px;border-radius:9px;font:inherit;font-size:15px;color:var(--muted);cursor:pointer}
+nav button.on{background:var(--card);color:var(--ink);font-weight:700;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+main{padding:16px;max-width:1280px;margin:0 auto}
+section{display:none}section.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
+button.b{border:1px solid var(--line);background:var(--card);border-radius:12px;padding:10px 14px;font:inherit;font-size:15px;cursor:pointer;color:var(--ink);min-height:46px}
+button.b:active{transform:translateY(1px)}
+button.b.pri{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:700}
+button.b.sel{background:#fff3c4;border-color:#e6c95a;font-weight:700}
+button.b:disabled{opacity:.4}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.seg button{border:0;border-right:1px solid var(--line);background:var(--card);padding:9px 14px;font:inherit;font-size:14px;cursor:pointer;color:var(--muted);min-height:42px}
+.seg button:last-child{border-right:0}
+.seg button.on{background:#fff3c4;color:var(--ink);font-weight:700}
+.writebox{display:flex;flex-direction:column;align-items:center;gap:14px;padding:22px 16px}
+.phrase{font-size:30px;font-weight:700;letter-spacing:1px;text-align:center}
+.phrase small{display:block;font-size:13px;font-weight:400;color:var(--muted);letter-spacing:0;margin-bottom:4px}
+.strip{position:relative;touch-action:none;max-width:100%}
+.strip canvas{position:absolute;left:0;top:0;touch-action:none}
+.tools{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.legend{display:none;gap:14px;font-size:13px;color:var(--muted)}
+.legend.on{display:flex}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.below{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+@media (max-width:900px){.below{grid-template-columns:1fr}}
+.opts{display:flex;flex-direction:column;gap:12px}
+.opts .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.opts label{font-size:14px;color:var(--ink);display:flex;align-items:center;gap:6px}
+.lbl{font-size:13px;color:var(--muted);min-width:64px}
+.bar{height:8px;background:var(--bg);border-radius:4px;overflow:hidden}
+.bar>div{height:100%;background:var(--v);width:0;transition:width .3s}
+.chips{display:flex;flex-wrap:wrap;gap:6px;max-height:300px;overflow:auto;padding:2px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 12px;font:inherit;font-size:14px;cursor:pointer;color:var(--ink)}
+.chip.done{background:#eef8f1;border-color:#bfe3cc;color:#2c6b47}
+.chip.done::before{content:'✓ '}
+.chip.cur{outline:2px solid var(--accent);outline-offset:1px}
+.chip.sec{border:0;background:none;color:var(--muted);font-size:12px;padding:8px 2px 2px;width:100%;text-align:left;cursor:default}
+.hint{font-size:13px;color:var(--muted);line-height:1.6}
+.make{display:grid;grid-template-columns:340px 1fr;gap:16px}
+@media (max-width:900px){.make{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.field>span{font-size:13px;color:var(--muted)}
+input[type=text],textarea{font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;width:100%}
+textarea{min-height:76px;resize:vertical}
+input[type=range]{width:100%;accent-color:var(--accent);height:30px}
+.stat{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed var(--line);font-size:14px}
+.stat b{font-size:16px}
+#preview{width:100%;background:#fff;border:1px solid var(--line);border-radius:12px;display:block}
+.prog{margin-top:10px;display:none}
+.msg{font-size:14px;margin-top:10px;line-height:1.6}
+.msg.err{color:#b4321e}
+ol.steps{padding-left:20px;margin:6px 0;font-size:14px;line-height:1.8}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:12px;font-size:14px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:9}
+.toast.on{opacity:.92}
+</style>
+</head>
+<body>
+<header>
+  <h1>나의 손글씨 폰트 만들기<small>평소처럼 쓰고 .ttf로 받기</small></h1>
+  <nav>
+    <button data-tab="write" class="on">① 쓰기</button>
+    <button data-tab="make">② 미리보기·만들기</button>
+    <button data-tab="save">③ 저장·불러오기</button>
+  </nav>
+</header>
+<main>
+<section id="tab-write" class="on">
+  <div class="card writebox">
+    <div class="phrase"><small id="phInfo"></small><span id="phText"></span></div>
+    <div class="strip" id="strip"><canvas id="bg"></canvas><canvas id="ink"></canvas></div>
+    <div class="legend" id="legend"><span><i style="background:var(--c)"></i>첫소리</span><span><i style="background:var(--v)"></i>모음</span><span><i style="background:var(--f)"></i>받침</span><span>· 색이 틀린 획을 누르면 바뀌어요</span></div>
+    <div class="tools">
+      <button class="b" id="bUndo">↶ 한 획</button>
+      <button class="b" id="bClear">줄 지우기</button>
+      <button class="b" id="bCheck">자모 확인</button>
+      <button class="b" id="bPrev">← 이전</button>
+      <button class="b pri" id="bNext">다음 →</button>
+    </div>
+  </div>
+  <div class="below">
+    <div class="card opts">
+      <div class="row"><span class="lbl">쓰기 분량</span>
+        <div class="seg"><button id="mBasic">기본 <span id="nBasic"></span>자</button><button id="mFull">정밀 +<span id="nFull"></span>자</button></div></div>
+      <div class="row"><span class="lbl">칸 크기</span>
+        <div class="seg" id="sizeSeg"><button data-s="s">작게</button><button data-s="m">보통</button><button data-s="l">크게</button></div></div>
+      <div class="row"><label><input type="checkbox" id="optGuide"> 흐린 글자 보며 쓰기</label><label><input type="checkbox" id="optQuote"> 시·명언 10줄</label><label><input type="checkbox" id="optSym"> 숫자·기호</label><label><input type="checkbox" id="optTouch"> 손가락으로도 쓰기</label></div>
+      <div class="bar"><div id="progBar"></div></div>
+      <div class="hint" id="progTxt"></div>
+      <div class="hint">평소 쓰는 크기와 모양 그대로 칸 안에 이어서 쓰면 돼요. 직접 쓴 글자는 폰트에 <b>그대로</b> 들어가고, 안 쓴 글자만 내 글씨의 자음·모음을 모아 만들어요.</div>
+    </div>
+    <div class="card">
+      <div class="chips" id="chips"></div>
+      <div class="row" style="display:flex;gap:8px;margin-top:12px">
+        <input type="text" id="myText" maxlength="12" placeholder="내 문장 추가 (예: 내 이름, 자주 쓰는 말)">
+        <button class="b" id="bAdd" style="white-space:nowrap;flex-shrink:0">추가</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="tab-make">
+  <div class="make">
+    <div class="card">
+      <label class="field"><span>폰트 이름</span><input type="text" id="fName" maxlength="40" placeholder="예: 민지체"></label>
+      <label class="field"><span>글씨 굵기 <b id="wVal"></b></span><input type="range" id="fWeight" min="14" max="80" step="2"></label>
+      <label class="field"><span>글씨 크기 맞추기 <b id="nVal"></b></span><input type="range" id="fNorm" min="0" max="100" step="10"></label>
+      <label style="font-size:14px;display:flex;gap:6px;align-items:center;margin-bottom:14px"><input type="checkbox" id="fPress"> S펜 필압(누르는 힘) 반영</label>
+      <div class="stat"><span>직접 쓴 글자</span><b id="sCells">0</b></div>
+      <div class="stat"><span>만들어지는 한글</span><b id="sCover">0 / 11,172</b></div>
+      <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px">
+        <button class="b pri" id="bBuild">폰트 파일 만들기</button>
+        <button class="b" id="bDown" style="display:none">⬇ 폰트 내려받기</button>
+      </div>
+      <div class="prog" id="prog"><div class="bar"><div id="buildBar"></div></div></div>
+      <div class="msg" id="buildMsg"></div>
+    </div>
+    <div class="card">
+      <label class="field"><span>미리보기 문장 (아무 글이나 써 보세요)</span><textarea id="pvText">안녕하세요 반가워요!
+오늘도 좋은 하루 ㅋㅋ 사랑해요 ♥</textarea></label>
+      <canvas id="preview"></canvas>
+      <div class="hint" style="margin-top:12px">
+        <b>캔바에서 쓰기</b>
+        <ol class="steps">
+          <li>[폰트 파일 만들기] → [폰트 내려받기]로 .ttf 파일을 저장해요.</li>
+          <li>캔바에서 <b>브랜드(브랜드 키트) → 글꼴 → 글꼴 업로드</b>로 파일을 올려요. (글꼴 업로드가 되는 계정에서만 보여요)</li>
+          <li>텍스트 상자의 글꼴 목록에서 내 폰트 이름을 골라 써요.</li>
+        </ol>
+        회색으로 보이는 글자는 아직 만들 수 없는 글자예요.
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="tab-save">
+  <div class="card" style="max-width:640px">
+    <p class="hint" style="margin-top:0">쓴 글씨는 이 기기의 브라우저에 자동으로 저장돼요. 여러 시간에 나눠 쓰거나 다른 기기에서 이어 쓰려면 <b>진행 파일</b>로 저장해 두세요.</p>
+    <div class="row" style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="b pri" id="bSaveJson">진행 파일 저장 (.json)</button>
+      <button class="b" id="bLoadJson">진행 파일 불러오기</button>
+      <input type="file" id="fileIn" accept=".json,application/json" style="display:none">
+    </div>
+    <div class="msg" id="saveMsg"></div>
+    <hr style="border:0;border-top:1px solid var(--line);margin:20px 0">
+    <button class="b" id="bReset">처음부터 다시 쓰기</button>
+    <div class="msg" id="resetMsg"></div>
+  </div>
+</section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== 한글 손글씨 폰트 핵심 로직 (UI 없음) =====
+const CHO = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ'.split('');
+const JUNG = 'ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'.split('');
+const JONG = ['', 'ㄱ','ㄲ','ㄳ','ㄴ','ㄵ','ㄶ','ㄷ','ㄹ','ㄺ','ㄻ','ㄼ','ㄽ','ㄾ','ㄿ','ㅀ','ㅁ','ㅂ','ㅄ','ㅅ','ㅆ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+const H_IDX = [8, 12, 13, 17, 18];            // ㅗㅛㅜㅠㅡ (가로 모음)
+const M_IDX = [9, 10, 11, 14, 15, 16, 19];    // ㅘㅙㅚㅝㅞㅟㅢ (섞임 모음)
+const MIX = { 9: 'ㅗㅏ', 10: 'ㅗㅐ', 11: 'ㅗㅣ', 14: 'ㅜㅓ', 15: 'ㅜㅔ', 16: 'ㅜㅣ', 19: 'ㅡㅣ' };
+const SYMBOLS = '0123456789.,!?~()-:^♥'.split('');
+
+function jtype(j) { return H_IDX.includes(j) ? 1 : M_IDX.includes(j) ? 2 : 0; }
+function decomp(ch) {
+  const s = ch.charCodeAt(0) - 0xAC00;
+  if (s < 0 || s >= 11172) return null;
+  return { c: Math.floor(s / 588), j: Math.floor((s % 588) / 28), f: s % 28 };
+}
+function layoutOf(j, f) { return jtype(j) * 2 + (f ? 1 : 0); }
+
+// 칸 좌표: 0~1000, y는 아래로 증가. 레이아웃 = 모음종류*2 + 받침유무
+const ZONES = [
+  { c: [[70, 170, 540, 830]], v: [[560, 60, 930, 940]] },                                   // 세로모음, 받침X
+  { c: [[70, 90, 540, 520]], v: [[560, 50, 930, 640]], f: [[170, 650, 830, 950]] },         // 세로모음, 받침O
+  { c: [[190, 60, 810, 470]], v: [[60, 500, 940, 900]] },                                   // 가로모음, 받침X
+  { c: [[210, 50, 790, 330]], v: [[60, 340, 940, 600]], f: [[190, 630, 810, 955]] },        // 가로모음, 받침O
+  { c: [[70, 60, 560, 440]], v: [[60, 460, 680, 900], [690, 40, 940, 960]] },               // 섞임모음, 받침X
+  { c: [[70, 50, 560, 320]], v: [[60, 330, 680, 610], [690, 30, 940, 660]], f: [[170, 670, 830, 960]] }, // 섞임모음, 받침O
+];
+const SYM_ZONE = [[150, 100, 850, 900]];
+function zoneBox(L, r) {
+  const rs = ZONES[L][r];
+  return [Math.min(...rs.map(a => a[0])), Math.min(...rs.map(a => a[1])), Math.max(...rs.map(a => a[2])), Math.max(...rs.map(a => a[3]))];
+}
+
+// ----- 획 → 자모 배정 -----
+function assignRole(pts, L) {
+  const z = ZONES[L];
+  let cx = 0, cy = 0; for (const p of pts) { cx += p[0]; cy += p[1]; } cx /= pts.length; cy /= pts.length;
+  let best = 'c', bs = -Infinity;
+  for (const r of Object.keys(z)) {
+    let n = 0;
+    for (const p of pts) for (const R of z[r]) if (p[0] >= R[0] && p[0] <= R[2] && p[1] >= R[1] && p[1] <= R[3]) { n++; break; }
+    let dmin = Infinity;
+    for (const R of z[r]) { const dx = Math.max(R[0] - cx, 0, cx - R[2]), dy = Math.max(R[1] - cy, 0, cy - R[3]); dmin = Math.min(dmin, Math.hypot(dx, dy)); }
+    const sc = n / pts.length - dmin / 10000;
+    if (sc > bs) { bs = sc; best = r; }
+  }
+  return best;
+}
+
+// ----- 획 외곽선 만들기 -----
+function resample(pts, step) {
+  if (pts.length < 2) return pts.map(p => p.slice());
+  const out = [pts[0].slice()];
+  let px = pts[0][0], py = pts[0][1], pp = pts[0][2] ?? 0.5, need = step;
+  for (let i = 1; i < pts.length; i++) {
+    const x = pts[i][0], y = pts[i][1], p = pts[i][2] ?? 0.5;
+    let dx = x - px, dy = y - py, d = Math.hypot(dx, dy);
+    while (d >= need) {
+      const t = need / d; px += dx * t; py += dy * t; pp += (p - pp) * t;
+      out.push([px, py, pp]);
+      dx = x - px; dy = y - py; d = Math.hypot(dx, dy); need = step;
+    }
+    need -= d; px = x; py = y; pp = p;
+  }
+  const last = pts[pts.length - 1], lo = out[out.length - 1];
+  if (Math.hypot(last[0] - lo[0], last[1] - lo[1]) > step * 0.3) out.push([last[0], last[1], last[2] ?? 0.5]);
+  return out;
+}
+function smooth(pts) {
+  let a = pts;
+  for (let k = 0; k < 2; k++) {
+    if (a.length < 3) break;
+    const b = [a[0]];
+    for (let i = 1; i < a.length - 1; i++) b.push([(a[i - 1][0] + a[i][0] * 2 + a[i + 1][0]) / 4, (a[i - 1][1] + a[i][1] * 2 + a[i + 1][1]) / 4, a[i][2]]);
+    b.push(a[a.length - 1]); a = b;
+  }
+  return a;
+}
+function simplify(pts, eps) {
+  if (pts.length < 3) return pts.slice();
+  const keep = new Uint8Array(pts.length); keep[0] = keep[pts.length - 1] = 1;
+  const stack = [[0, pts.length - 1]];
+  while (stack.length) {
+    const [s, e] = stack.pop();
+    const [x1, y1] = pts[s], [x2, y2] = pts[e];
+    const dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy) || 1e-9;
+    let md = -1, mi = -1;
+    for (let i = s + 1; i < e; i++) {
+      const d = Math.abs(dy * pts[i][0] - dx * pts[i][1] + x2 * y1 - y2 * x1) / len;
+      if (d > md) { md = d; mi = i; }
+    }
+    if (md > eps) { keep[mi] = 1; stack.push([s, mi], [mi, e]); }
+  }
+  return pts.filter((_, i) => keep[i]);
+}
+function circlePoly(x, y, r, n) { const o = []; for (let i = 0; i < n; i++) { const a = -i / n * Math.PI * 2; o.push([x + Math.cos(a) * r, y + Math.sin(a) * r]); } return o; }
+function strokeToPoly(raw, base, useP) {
+  const W = p => base * (useP ? (0.65 + 0.7 * p) : 1) / 2;
+  let pts = smooth(resample(raw, 8));
+  if (pts.length < 2) { const p = pts[0]; return circlePoly(p[0], p[1], Math.max(W(p[2] ?? 0.5), base * 0.4), 14); }
+  let total = 0; for (let i = 1; i < pts.length; i++) total += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+  if (total < 6) { const p = pts[0]; return circlePoly(p[0], p[1], Math.max(W(p[2] ?? 0.5), base * 0.4), 14); }
+  const n = pts.length, Lp = [], Rp = [], nrm = [];
+  for (let i = 0; i < n; i++) {
+    const a = pts[Math.max(0, i - 1)], b = pts[Math.min(n - 1, i + 1)];
+    let tx = b[0] - a[0], ty = b[1] - a[1]; const l = Math.hypot(tx, ty) || 1; tx /= l; ty /= l;
+    const nx = -ty, ny = tx, w = W(pts[i][2]);
+    nrm.push([nx, ny, w]);
+    Lp.push([pts[i][0] + nx * w, pts[i][1] + ny * w]);
+    Rp.push([pts[i][0] - nx * w, pts[i][1] - ny * w]);
+  }
+  const poly = simplify(Lp, 2);
+  const ST = 5;
+  { const [nx, ny, w] = nrm[n - 1], E = pts[n - 1], th = Math.atan2(ny, nx);
+    for (let k = 1; k < ST; k++) { const a = th - k * Math.PI / ST; poly.push([E[0] + Math.cos(a) * w, E[1] + Math.sin(a) * w]); } }
+  poly.push(...simplify(Rp, 2).reverse());
+  { const [nx, ny, w] = nrm[0], S0 = pts[0], th = Math.atan2(ny, nx);
+    for (let k = 1; k < ST; k++) { const a = th + Math.PI - k * Math.PI / ST; poly.push([S0[0] + Math.cos(a) * w, S0[1] + Math.sin(a) * w]); } }
+  return poly;
+}
+
+// ----- 쓴 칸들 → 자모 샘플 → 글자 조합 -----
+// cells: { '가': [{r:'c'|'v'|'f'|'x', p:[[x,y,pressure],...]}, ...] }
+// ----- 쓰기 목록 (실제 단어·문장) -----
+const LISTS = {"basic":["동녘 하늘이 밝다","꽤 괜찮은 뷔페","볶음밥 먹자","회의 시간","수고했어요","놔둬","초콜릿 쿠키","모자를 씌워 줘","끝","쭉 뻗어","퀴즈 풀기","꿰뚫다","짧다","훑다","토끼","태양","낮에 꽃을 봤다","띄어쓰기","딸기 우유","예쁘다","삶","값","넋","앞","써","뭘","쉰","춰","좋다","튀었다","앉다","외곬","읊다","쬐다","걔"],"extra":["횡단보도","늴리리야","너무 귀여워","짜장면 짬뽕","웬일로 일찍 왔어?","주꾸미","쉬운 문제","따뜻한 차 한 잔","숲","느낌","캠프","비가 와요","꽉 잡아","뭐 해?","쪼개","충분","쑥","탕","통","팡","쥘","뛸","쾅","의사 선생님","씩씩한 친구","뜨거워","캬라멜","내 몫까지 먹어","과학 실험","체육 대회","됐다","세상","효도","삐약","조용"]};
+const QUOTES = [
+  ['나 보기가 역겨워 가실 때에는', '김소월 「진달래꽃」'],
+  ['엄마야 누나야 강변 살자', '김소월 「엄마야 누나야」'],
+  ['산에는 꽃 피네 꽃이 피네', '김소월 「산유화」'],
+  ['아아 사랑하는 나의 님은 갔습니다', '한용운 「님의 침묵」'],
+  ['빼앗긴 들에도 봄은 오는가', '이상화 「빼앗긴 들에도 봄은 오는가」'],
+  ['천 리 길도 한 걸음부터', '속담'],
+  ['배움에는 끝이 없다', '명언'],
+  ['실패는 성공의 어머니', '명언'],
+  ['아는 것이 힘이다', '프랜시스 베이컨'],
+  ['티끌 모아 태산', '속담'],
+];
+const SYM_PHRASES = ['0123456789', '.,!?~()-:^♥'];
+
+// ----- 원고지 줄: 글자 칸 배치 -----
+const SPACE_W = 450;
+function stripLayout(text) {
+  const out = []; let x = 0;
+  for (const ch of text) {
+    if (ch === ' ') { out.push({ ch, x0: x, w: SPACE_W, space: true }); x += SPACE_W; }
+    else { out.push({ ch, x0: x, w: 1000 }); x += 1000; }
+  }
+  return { cells: out, width: x };
+}
+// 획을 칸에 배정: 가장 많은 점이 들어간 칸
+function strokeCell(lay, pts) {
+  const cnt = new Map();
+  for (const p of pts) {
+    let best = -1, bd = 1e9;
+    lay.cells.forEach((c, i) => {
+      if (c.space) return;
+      const d = p[0] < c.x0 ? c.x0 - p[0] : p[0] > c.x0 + c.w ? p[0] - c.x0 - c.w : 0;
+      if (d < bd) { bd = d; best = i; }
+    });
+    cnt.set(best, (cnt.get(best) || 0) + 1);
+  }
+  let bi = -1, bn = -1; for (const [i, n] of cnt) if (n > bn) { bn = n; bi = i; }
+  return bi;
+}
+
+// ----- 자연스럽게 쓴 글자에서 초성/중성/종성 자동 분리 -----
+function sInfo(p) {
+  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9, cx = 0, cy = 0;
+  for (const q of p) { x0 = Math.min(x0, q[0]); y0 = Math.min(y0, q[1]); x1 = Math.max(x1, q[0]); y1 = Math.max(y1, q[1]); cx += q[0]; cy += q[1]; }
+  return { x0, y0, x1, y1, w: x1 - x0, h: y1 - y0, cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, mx: cx / p.length, my: cy / p.length };
+}
+const VPART = { 9: 0, 10: 1, 11: 20, 14: 4, 15: 5, 16: 20, 19: 20 };
+const HPART = { 9: 8, 10: 8, 11: 8, 14: 13, 15: 13, 16: 13, 19: 18 };
+const STEMS2 = [1, 3, 5, 7];
+const RTICK = { 0: 1, 1: 1, 2: 2, 3: 2 }, LTICK = { 4: 1, 5: 1, 6: 2, 7: 2 };
+const HTICK = { 8: [1, 'up'], 12: [2, 'up'], 13: [1, 'down'], 17: [2, 'down'], 18: [0] };
+
+function autoRoles(strokes, d) {
+  const n = strokes.length; if (!n) return [];
+  const I = strokes.map(sInfo);
+  const X0 = Math.min(...I.map(a => a.x0)), X1 = Math.max(...I.map(a => a.x1));
+  const Y0 = Math.min(...I.map(a => a.y0)), Y1 = Math.max(...I.map(a => a.y1));
+  const W = Math.max(X1 - X0, 60), H = Math.max(Y1 - Y0, 60);
+  const R = new Array(n).fill(null);
+  const t = jtype(d.j);
+  const isV = i => I[i].h > 1.5 * I[i].w, isH = i => I[i].w > 1.5 * I[i].h;
+  const free = () => [...Array(n).keys()].filter(i => !R[i]);
+  const fallback = () => {
+    const L = layoutOf(d.j, d.f), s = 1000;
+    return strokes.map(p => assignRole(p.map(q => [(q[0] - X0) / W * 840 + 80, (q[1] - Y0) / H * 840 + 80]), L));
+  };
+  let stemX0 = null, stemBot = null, stemTop = null, barY = null, bar = null;
+  const jungBottom = () => Math.max(...[...Array(n).keys()].filter(i => R[i] === 'v').map(i => I[i].y1));
+
+  if (t === 0 || t === 2) {
+    const v = t === 0 ? d.j : VPART[d.j];
+    const cand = [...Array(n).keys()].filter(i => isV(i) && I[i].h > 0.33 * H).sort((a, b) => I[b].cx - I[a].cx);
+    if (!cand.length) return fallback();
+    const stems = [cand[0]];
+    if (STEMS2.includes(v)) { const s2 = cand.find(i => i !== cand[0] && I[i].cx < I[cand[0]].cx && I[i].h > 0.5 * I[cand[0]].h); if (s2 != null) stems.push(s2); }
+    stems.forEach(i => R[i] = 'v');
+    stemX0 = Math.min(...stems.map(i => I[i].x0)); stemTop = Math.min(...stems.map(i => I[i].y0)); stemBot = Math.max(...stems.map(i => I[i].y1));
+    const sH = stemBot - stemTop;
+    if (RTICK[v]) for (const i of free()) if (I[i].cx > stemX0 && I[i].cy > stemTop - 0.05 * H && I[i].cy < stemBot && I[i].w < 0.45 * W) R[i] = 'v';
+    if (LTICK[v]) {
+      const c = free().filter(i => !isV(i) && I[i].x1 > stemX0 - 0.14 * W && I[i].x1 < stemX0 + 0.1 * W && I[i].cy > stemTop + 0.08 * sH && I[i].cy < stemBot - 0.03 * sH && I[i].w < 0.42 * W)
+        .sort((a, b) => Math.abs(I[a].x1 - stemX0) - Math.abs(I[b].x1 - stemX0));
+      c.slice(0, LTICK[v]).forEach(i => R[i] = 'v');
+    }
+  }
+  if (t === 1 || t === 2) {
+    const h = t === 1 ? d.j : HPART[d.j];
+    let cand = free().filter(i => isH(i) && I[i].w > (t === 1 ? 0.38 : 0.25) * W);
+    if (t === 2) cand = cand.filter(i => I[i].cx < stemX0);
+    if (!cand.length) return fallback();
+    const score = i => I[i].w * (1 - (d.f ? 0.35 * Math.max(0, (I[i].cy - Y0) / H - 0.55) : 0));
+    bar = cand.sort((a, b) => score(b) - score(a))[0];
+    R[bar] = 'v'; barY = I[bar].cy;
+    const [cnt, dir] = HTICK[h];
+    if (cnt) {
+      const B = I[bar];
+      const c = free().filter(i => I[i].h >= I[i].w * 0.6 && I[i].cx > B.x0 - 0.05 * W && I[i].cx < B.x1 + 0.05 * W && I[i].h < 0.45 * H &&
+        (dir === 'up' ? (Math.abs(I[i].y1 - barY) < 0.16 * H && I[i].cy < barY) : (Math.abs(I[i].y0 - barY) < 0.16 * H && I[i].cy > barY)))
+        .sort((a, b) => (dir === 'up' ? Math.abs(I[a].y1 - barY) - Math.abs(I[b].y1 - barY) : Math.abs(I[a].y0 - barY) - Math.abs(I[b].y0 - barY)));
+      c.slice(0, cnt).forEach(i => R[i] = 'v');
+    }
+  }
+  if (d.f) {
+    let thr;
+    if (t === 0) thr = stemBot - 0.04 * H;
+    else if (t === 1) thr = Math.max(barY + 0.04 * H, jungBottom() - 0.04 * H);
+    else thr = Math.max(stemBot - 0.04 * H, barY + 0.04 * H);
+    for (const i of free()) if (I[i].my > thr) R[i] = 'f';
+  } else if (t !== 0) {
+    for (const i of free()) if (I[i].cy > barY + 0.08 * H) R[i] = 'v';
+  }
+  for (const i of free()) R[i] = 'c';
+  if (!R.includes('c') || (d.f && !R.includes('f'))) return fallback();
+  return R;
+}
+
+// ----- 줄(문장) 단위 기록 → 글자별 획 -----
+// rec: [{p:[[x,y,pr]...], fix?:'c'|'v'|'f'}]  (x는 줄 전체 좌표)
+function splitPhrase(text, rec) {
+  const lay = stripLayout(text);
+  const per = lay.cells.map(() => []);
+  rec.forEach((st, k) => { const ci = strokeCell(lay, st.p); if (ci >= 0) per[ci].push(k); });
+  const out = [];
+  lay.cells.forEach((c, ci) => {
+    if (c.space || !per[ci].length) return;
+    const local = per[ci].map(k => rec[k].p.map(q => [q[0] - c.x0, q[1], q[2]]));
+    const d = decomp(c.ch);
+    let roles;
+    if (d) { roles = autoRoles(local, d); per[ci].forEach((k, j) => { if (rec[k].fix) roles[j] = rec[k].fix; }); }
+    else roles = local.map(() => 'x');
+    out.push({ ch: c.ch, idx: per[ci], strokes: local.map((p, j) => ({ r: roles[j], p })) });
+  });
+  return out;
+}
+
+// ----- 조합기 -----
+function bboxOf(strokes) {
+  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+  for (const s of strokes) for (const p of s) { x0 = Math.min(x0, p[0]); y0 = Math.min(y0, p[1]); x1 = Math.max(x1, p[0]); y1 = Math.max(y1, p[1]); }
+  return x0 > x1 ? null : { x0, y0, x1, y1 };
+}
+function uni(a, b) { if (!a) return b; if (!b) return a; return { x0: Math.min(a.x0, b.x0), y0: Math.min(a.y0, b.y0), x1: Math.max(a.x1, b.x1), y1: Math.max(a.y1, b.y1) }; }
+function moveS(strokes, f) { return strokes.map(s => s.map(p => { const q = f(p[0], p[1]); return [q[0], q[1], p[2]]; })); }
+const clamp = (v, m) => Math.max(-m, Math.min(m, v));
+
+class Composer {
+  // written: { 글자: [{r, p}] } (칸 좌표 0~1000)
+  constructor(written, norm = 0.8) {
+    // 글자 크기·위치 맞추기: 쓴 글자들의 중간 크기·중심으로 끌어당김
+    this.norm = norm; this.T = null;
+    const hs = Object.keys(written).filter(c => decomp(c));
+    if (hs.length >= 3) {
+      const bs = hs.map(c => bboxOf(written[c].map(x => x.p))).filter(Boolean);
+      const med = a => { const b = a.slice().sort((x, y) => x - y); return b[b.length >> 1]; };
+      this.T = { size: med(bs.map(b => Math.max(b.x1 - b.x0, b.y1 - b.y0))), cx: med(bs.map(b => (b.x0 + b.x1) / 2)), cy: med(bs.map(b => (b.y0 + b.y1) / 2)) };
+      const w2 = {};
+      for (const c of Object.keys(written)) {
+        if (!decomp(c)) { w2[c] = written[c].map(x => ({ r: x.r, p: this.globalXf([x.p])[0] })); continue; }
+        const ns = this.normalize(written[c].map(x => x.p));
+        w2[c] = written[c].map((x, i) => ({ r: x.r, p: ns[i] }));
+      }
+      written = w2;
+    }
+    this.written = written; this.sm = [];
+    const acc = {};
+    for (const ch of Object.keys(written)) {
+      const st = written[ch]; const d = decomp(ch); if (!d) continue;
+      const L = layoutOf(d.j, d.f), parts = {};
+      for (const r of ['c', 'v', 'f']) { const s = st.filter(x => x.r === r).map(x => x.p); if (s.length) parts[r] = { s, bb: bboxOf(s) }; }
+      if (!parts.c || !parts.v || (d.f && !parts.f)) continue;
+      this.sm.push({ ch, d, L, parts });
+      for (const r in parts) { const k = L + r; (acc[k] = acc[k] || []).push(parts[r].bb); }
+    }
+    this.stats = {};
+    for (const k in acc) { const a = acc[k], m = f => a.reduce((s, b) => s + b[f], 0) / a.length; this.stats[k] = { x0: m('x0'), y0: m('y0'), x1: m('x1'), y1: m('y1') }; }
+    this.byKey = {};
+    for (const s of this.sm) for (const r in s.parts) { const idx = r === 'c' ? s.d.c : r === 'v' ? s.d.j : s.d.f; (this.byKey[r + idx] = this.byKey[r + idx] || []).push(s); }
+  }
+  normalize(strokes, done) {
+    if (!this.T) return strokes;
+    if (done) { // 이미 확대된 좌표: 크기만 맞춤
+      const b = bboxOf(strokes); if (!b) return strokes;
+      const size = Math.max(b.x1 - b.x0, b.y1 - b.y0, 1), k = this.norm, target = Math.min(2.6, 800 / this.T.size) * this.T.size;
+      const s = Math.pow(target / size, k), cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2;
+      const tx = cx + (500 - cx) * k, ty = cy + (480 - cy) * k;
+      return moveS(strokes, (x, y) => [tx + (x - cx) * s, ty + (y - cy) * s]);
+    }
+    const b = bboxOf(strokes); if (!b) return strokes;
+    const size = Math.max(b.x1 - b.x0, b.y1 - b.y0, 1), k = this.norm;
+    const s = Math.pow(this.T.size / size, k);
+    const cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2;
+    const tx = cx + (this.T.cx - cx) * k, ty = cy + (this.T.cy - cy) * k;
+    return this.globalXf(moveS(strokes, (x, y) => [tx + (x - cx) * s, ty + (y - cy) * s]));
+  }
+  // 칸에 작게 썼어도 폰트에서는 글자가 칸을 알맞게 채우도록 전체 확대
+  globalXf(st) {
+    if (!this.T) return st;
+    const g = Math.min(2.6, 800 / this.T.size), T = this.T;
+    return st.map(s => s.map(p => [500 + (p[0] - T.cx) * g, 480 + (p[1] - T.cy) * g, p[2]]));
+  }
+  meanBox(L, r) { const s = this.stats[L + r]; if (s) return s; const z = zoneBox(L, r); return { x0: z[0], y0: z[1], x1: z[2], y1: z[3] }; }
+  pick(r, idx, d, L) {
+    const list = this.byKey[r + idx]; if (!list) return null;
+    let best = null, bs = -1;
+    for (const s of list) {
+      let sc = 0;
+      if (r === 'c') sc = (s.L === L ? 100 : 0) + ((s.L >> 1) === (L >> 1) ? 40 : 0) + ((s.L & 1) === (L & 1) ? 20 : 0) + (s.d.j === d.j ? 10 : 0);
+      if (r === 'v') sc = (s.L === L ? 100 : 0) + (s.d.c === d.c ? 10 : 0);
+      if (r === 'f') sc = ((s.L >> 1) === (L >> 1) ? 100 : 0) + (s.d.j === d.j ? 30 : 0) + (s.d.c === d.c ? 5 : 0);
+      if (sc > bs) { bs = sc; best = s; }
+    }
+    return best;
+  }
+  // 다른 배치에서 가져온 부분은 평균 크기·위치 비율로 옮김
+  xf(s, r, L) {
+    if (s.L === L) return (x, y) => [x, y];
+    const a = this.meanBox(s.L, r), b = this.meanBox(L, r);
+    const sx = (b.x1 - b.x0) / Math.max(a.x1 - a.x0, 1), sy = (b.y1 - b.y0) / Math.max(a.y1 - a.y0, 1);
+    return (x, y) => [b.x0 + (x - a.x0) * sx, b.y0 + (y - a.y0) * sy];
+  }
+  tbox(bb, f) { if (!bb) return null; const a = f(bb.x0, bb.y0), b = f(bb.x1, bb.y1); return { x0: a[0], y0: a[1], x1: b[0], y1: b[1] }; }
+  syllable(ch) {
+    if (this.written[ch] && this.sm.find(s => s.ch === ch)) return this.written[ch].map(x => x.p);
+    const d = decomp(ch); if (!d) return null;
+    const L = layoutOf(d.j, d.f), t = jtype(d.j);
+    const sc = this.pick('c', d.c, d, L), sv = this.pick('v', d.j, d, L), sf = d.f ? this.pick('f', d.f, d, L) : null;
+    if (!sc || !sv || (d.f && !sf)) return null;
+    const fc = this.xf(sc, 'c', L), C = moveS(sc.parts.c.s, fc), cb = this.tbox(sc.parts.c.bb, fc);
+    // 모음: 그 모음을 쓴 글자에서의 '초성과의 간격'을 그대로 유지
+    const fv = this.xf(sv, 'v', L), cSrc = this.tbox(sv.parts.c.bb, fv);
+    let dx = 0, dy = 0;
+    if (t === 0) dx = cb.x1 - cSrc.x1;
+    else if (t === 1) dy = cb.y1 - cSrc.y1;
+    else { dx = (cb.x1 - cSrc.x1) * 0.6; dy = (cb.y1 - cSrc.y1) * 0.6; }
+    dx = clamp(dx, 220); dy = clamp(dy, 220);
+    const V = moveS(sv.parts.v.s, (x, y) => { const q = fv(x, y); return [q[0] + dx, q[1] + dy]; });
+    let all = C.concat(V);
+    if (d.f) {
+      const ff = this.xf(sf, 'f', L);
+      const upT = uni(cb, bboxOf(V));
+      const upS = uni(this.tbox(sf.parts.c.bb, ff), this.tbox(sf.parts.v.bb, ff));
+      const ddy = clamp(upT.y1 - upS.y1, 220), ddx = clamp(((upT.x0 + upT.x1) - (upS.x0 + upS.x1)) / 4, 150);
+      all = all.concat(moveS(sf.parts.f.s, (x, y) => { const q = ff(x, y); return [q[0] + ddx, q[1] + ddy]; }));
+    }
+    // 칸 밖으로 많이 나가면 살짝 줄이기
+    const bb = bboxOf(all);
+    const over = Math.max(0, -bb.x0 + 15, bb.x1 - 985, -bb.y0 + 15, bb.y1 - 985);
+    if (over > 0) {
+      const w = Math.max(bb.x1 - bb.x0, bb.y1 - bb.y0), k = Math.max(0.6, (w - over * 2) / w), cx = (bb.x0 + bb.x1) / 2, cy = (bb.y0 + bb.y1) / 2;
+      const tx = Math.min(Math.max(cx, 15 + (cx - bb.x0) * k), 985 - (bb.x1 - cx) * k), ty = Math.min(Math.max(cy, 15 + (cy - bb.y0) * k), 985 - (bb.y1 - cy) * k);
+      all = moveS(all, (x, y) => [tx + (x - cx) * k, ty + (y - cy) * k]);
+    }
+    return this.normalize(all, true);
+  }
+  fit(strokes, box) {
+    const b = bboxOf(strokes); if (!b) return null;
+    const bw = Math.max(b.x1 - b.x0, 1), bh = Math.max(b.y1 - b.y0, 1);
+    const s = Math.min((box[2] - box[0]) / bw, (box[3] - box[1]) / bh, 1.5);
+    const ox = (box[0] + box[2]) / 2 - (b.x0 + b.x1) / 2 * s, oy = (box[1] + box[3]) / 2 - (b.y0 + b.y1) / 2 * s;
+    return moveS(strokes, (x, y) => [x * s + ox, y * s + oy]);
+  }
+  jamo(ch) {
+    const ci = CHO.indexOf(ch), fi = JONG.indexOf(ch), vi = JUNG.indexOf(ch);
+    let s = null, r, box;
+    if (ci >= 0) { s = this.pick('c', ci, { j: 0, c: ci }, 0); r = 'c'; box = [180, 180, 820, 820]; }
+    if (!s && fi > 0) { s = this.pick('f', fi, { j: 0, c: 0 }, 1); r = 'f'; box = [180, 180, 820, 820]; }
+    if (vi >= 0) { s = this.pick('v', vi, { c: 11 }, jtype(vi) * 2); r = 'v'; box = [200, 100, 800, 900]; }
+    return s ? this.fit(s.parts[r].s, box) : null;
+  }
+  symbol(ch) { const w = this.written[ch]; return w && w.length ? w.map(x => x.p) : null; }
+  glyph(ch) {
+    const c = ch.charCodeAt(0);
+    if (c >= 0xAC00 && c <= 0xD7A3) return this.syllable(ch);
+    if (c >= 0x3131 && c <= 0x3163) return this.jamo(ch);
+    return this.symbol(ch);
+  }
+  coverage() {
+    let n = 0;
+    for (let s = 0; s < 11172; s++) {
+      const ch = String.fromCharCode(0xAC00 + s), d = decomp(ch);
+      if (this.byKey['c' + d.c] && this.byKey['v' + d.j] && (!d.f || this.byKey['f' + d.f])) n++;
+    }
+    return n;
+  }
+}
+const toPolys = (strokes, w, p) => strokes.map(s => strokeToPoly(s, w, p));
+
+async function makeFont(comp, familyName, weight, press, onProgress) {
+  const glyphs = [{ code: null, contours: notdefContours(), adv: 660 }, { code: 32, contours: [], adv: 320 }, { code: 0xA0, contours: [], adv: 320 }];
+  for (const ch of SYMBOLS) {
+    const st = comp.symbol(ch); if (!st) continue;
+    const b = bboxOf(st);
+    glyphs.push({ code: ch.charCodeAt(0), contours: toFontContours(toPolys(st, weight, press), 70 - b.x0), adv: Math.round(b.x1 - b.x0 + 140 + weight) });
+  }
+  for (let c = 0x3131; c <= 0x3163; c++) {
+    const st = comp.jamo(String.fromCharCode(c)); if (!st) continue;
+    glyphs.push({ code: c, contours: toFontContours(toPolys(st, weight, press), 0), adv: 1000 });
+  }
+  for (let s = 0; s < 11172; s++) {
+    const st = comp.syllable(String.fromCharCode(0xAC00 + s));
+    if (st) glyphs.push({ code: 0xAC00 + s, contours: toFontContours(toPolys(st, weight, press), 0), adv: 1000 });
+    if (s % 300 === 0) { onProgress && onProgress(s / 11172 * 0.92); await new Promise(r => setTimeout(r, 0)); }
+  }
+  glyphs.sort((a, b) => (a.code == null ? -1 : a.code) - (b.code == null ? -1 : b.code));
+  const bytes = buildTTF(glyphs, familyName);
+  onProgress && onProgress(1);
+  return { bytes, count: glyphs.filter(g => g.code >= 0xAC00 && g.code <= 0xD7A3).length };
+}
+
+// ----- TrueType(.ttf) 파일 쓰기 -----
+const ASC = 880; // 칸 y=0 → 폰트 y=880, 칸 y=1000 → -120
+function toFontContours(polys, dx) {
+  const out = [];
+  for (const poly of polys) {
+    const c = [];
+    for (const p of poly) {
+      const x = Math.round(p[0] + dx), y = Math.round(ASC - p[1]);
+      const l = c[c.length - 1];
+      if (!l || l[0] !== x || l[1] !== y) c.push([x, y]);
+    }
+    while (c.length > 1 && c[0][0] === c[c.length - 1][0] && c[0][1] === c[c.length - 1][1]) c.pop();
+    if (c.length < 3) continue;
+    let a = 0; for (let i = 0; i < c.length; i++) { const p = c[i], q = c[(i + 1) % c.length]; a += p[0] * q[1] - q[0] * p[1]; }
+    if (a > 0) c.reverse();          // 바깥 윤곽: 시계 방향
+    out.push(c);
+  }
+  return out;
+}
+function encodeGlyph(contours) {
+  if (!contours.length) return { bytes: new Uint8Array(0), xMin: 0, yMin: 0, xMax: 0, yMax: 0, nPts: 0, nC: 0 };
+  let xMin = 1e9, yMin = 1e9, xMax = -1e9, yMax = -1e9, nPts = 0;
+  for (const c of contours) for (const p of c) { xMin = Math.min(xMin, p[0]); xMax = Math.max(xMax, p[0]); yMin = Math.min(yMin, p[1]); yMax = Math.max(yMax, p[1]); nPts++; }
+  const flags = [], xb = [], yb = [], ends = [];
+  let px = 0, py = 0, idx = -1;
+  for (const c of contours) {
+    for (const p of c) {
+      idx++;
+      const dx = p[0] - px, dy = p[1] - py; let f = 1;
+      if (dx === 0) f |= 0x10;
+      else if (dx > -256 && dx < 256) { f |= 0x02; if (dx > 0) f |= 0x10; xb.push(Math.abs(dx)); }
+      else xb.push((dx >> 8) & 255, dx & 255);
+      if (dy === 0) f |= 0x20;
+      else if (dy > -256 && dy < 256) { f |= 0x04; if (dy > 0) f |= 0x20; yb.push(Math.abs(dy)); }
+      else yb.push((dy >> 8) & 255, dy & 255);
+      flags.push(f); px = p[0]; py = p[1];
+    }
+    ends.push(idx);
+  }
+  flags[0] |= 0x40; // OVERLAP_SIMPLE
+  let size = 10 + ends.length * 2 + 2 + flags.length + xb.length + yb.length;
+  const padded = (size + 3) & ~3;
+  const buf = new Uint8Array(padded), dv = new DataView(buf.buffer);
+  let o = 0;
+  dv.setInt16(o, contours.length); dv.setInt16(o + 2, xMin); dv.setInt16(o + 4, yMin); dv.setInt16(o + 6, xMax); dv.setInt16(o + 8, yMax); o = 10;
+  for (const e of ends) { dv.setUint16(o, e); o += 2; }
+  dv.setUint16(o, 0); o += 2;
+  buf.set(flags, o); o += flags.length; buf.set(xb, o); o += xb.length; buf.set(yb, o);
+  return { bytes: buf, xMin, yMin, xMax, yMax, nPts, nC: contours.length };
+}
+function utf16be(s) { const b = new Uint8Array(s.length * 2); for (let i = 0; i < s.length; i++) { b[i * 2] = s.charCodeAt(i) >> 8; b[i * 2 + 1] = s.charCodeAt(i) & 255; } return b; }
+function tbl(size, fn) { const b = new Uint8Array(size); fn(new DataView(b.buffer)); return b; }
+function checksum(b) { let s = 0; const n = Math.ceil(b.length / 4) * 4; for (let i = 0; i < n; i += 4) s = (s + (((b[i] || 0) << 24) | ((b[i + 1] || 0) << 16) | ((b[i + 2] || 0) << 8) | (b[i + 3] || 0))) >>> 0; return s; }
+
+// glyphs: [{code|null, contours, adv}] (0번은 .notdef)
+function buildTTF(glyphs, familyName) {
+  const enc = glyphs.map(g => encodeGlyph(g.contours));
+  const numGlyphs = glyphs.length;
+  // glyf + loca
+  let glyfLen = 0; const offs = [0];
+  for (const e of enc) { glyfLen += e.bytes.length; offs.push(glyfLen); }
+  const glyf = new Uint8Array(glyfLen); { let o = 0; for (const e of enc) { glyf.set(e.bytes, o); o += e.bytes.length; } }
+  const loca = tbl(offs.length * 4, dv => offs.forEach((v, i) => dv.setUint32(i * 4, v)));
+  // 측정값
+  let gx0 = 1e9, gy0 = 1e9, gx1 = -1e9, gy1 = -1e9, maxP = 0, maxC = 0, advMax = 0, minL = 1e9, minR = 1e9, maxExt = -1e9, advSum = 0, advN = 0;
+  enc.forEach((e, i) => {
+    const adv = glyphs[i].adv; advMax = Math.max(advMax, adv); if (adv) { advSum += adv; advN++; }
+    if (!e.nPts) return;
+    gx0 = Math.min(gx0, e.xMin); gy0 = Math.min(gy0, e.yMin); gx1 = Math.max(gx1, e.xMax); gy1 = Math.max(gy1, e.yMax);
+    maxP = Math.max(maxP, e.nPts); maxC = Math.max(maxC, e.nC);
+    minL = Math.min(minL, e.xMin); minR = Math.min(minR, adv - e.xMax); maxExt = Math.max(maxExt, e.xMax);
+  });
+  if (minL === 1e9) { minL = 0; minR = 0; maxExt = 0; gx0 = gy0 = gx1 = gy1 = 0; }
+  const winAsc = Math.max(1000, gy1), winDesc = Math.max(250, -gy0);
+  const hmtx = tbl(numGlyphs * 4, dv => enc.forEach((e, i) => { dv.setUint16(i * 4, glyphs[i].adv); dv.setInt16(i * 4 + 2, e.nPts ? e.xMin : 0); }));
+  const now = BigInt(Math.floor(Date.now() / 1000)) + 2082844800n;
+  const head = tbl(54, dv => {
+    dv.setUint32(0, 0x00010000); dv.setUint32(4, 0x00010000); dv.setUint32(8, 0); dv.setUint32(12, 0x5F0F3CF5);
+    dv.setUint16(16, 0x000B); dv.setUint16(18, 1000);
+    dv.setBigUint64(20, now); dv.setBigUint64(28, now);
+    dv.setInt16(36, gx0); dv.setInt16(38, gy0); dv.setInt16(40, gx1); dv.setInt16(42, gy1);
+    dv.setUint16(44, 0); dv.setUint16(46, 8); dv.setInt16(48, 2); dv.setInt16(50, 1); dv.setInt16(52, 0);
+  });
+  const hhea = tbl(36, dv => {
+    dv.setUint32(0, 0x00010000); dv.setInt16(4, winAsc); dv.setInt16(6, -winDesc); dv.setInt16(8, 0);
+    dv.setUint16(10, advMax); dv.setInt16(12, minL); dv.setInt16(14, minR); dv.setInt16(16, maxExt);
+    dv.setInt16(18, 1); dv.setInt16(20, 0); dv.setInt16(22, 0); dv.setInt16(34 - 2, 0); dv.setUint16(34, numGlyphs);
+  });
+  const maxp = tbl(32, dv => {
+    dv.setUint32(0, 0x00010000); dv.setUint16(4, numGlyphs); dv.setUint16(6, maxP); dv.setUint16(8, maxC);
+    dv.setUint16(14, 2);
+  });
+  const codes = glyphs.map(g => g.code).filter(c => c != null);
+  const os2 = tbl(96, dv => {
+    dv.setUint16(0, 4); dv.setInt16(2, Math.round(advSum / Math.max(advN, 1))); dv.setUint16(4, 400); dv.setUint16(6, 5); dv.setUint16(8, 0);
+    dv.setInt16(10, 650); dv.setInt16(12, 600); dv.setInt16(14, 0); dv.setInt16(16, 75);
+    dv.setInt16(18, 650); dv.setInt16(20, 600); dv.setInt16(22, 0); dv.setInt16(24, 350);
+    dv.setInt16(26, 50); dv.setInt16(28, 300); dv.setInt16(30, 0);
+    dv.setUint32(42, 1); dv.setUint32(46, (1 << 20) | (1 << 24)); dv.setUint32(50, 0); dv.setUint32(54, 0);
+    [78, 79, 78, 69].forEach((c, i) => dv.setUint8(58 + i, c)); // 'NONE'
+    dv.setUint16(62, 0x40); dv.setUint16(64, Math.min(...codes)); dv.setUint16(66, Math.min(0xFFFF, Math.max(...codes)));
+    dv.setInt16(68, 880); dv.setInt16(70, -120); dv.setInt16(72, 200); dv.setUint16(74, winAsc); dv.setUint16(76, winDesc);
+    dv.setUint32(78, (1 << 19) | 1); dv.setUint32(82, 0);
+    dv.setInt16(86, 500); dv.setInt16(88, 700); dv.setUint16(90, 0); dv.setUint16(92, 32); dv.setUint16(94, 0);
+  });
+  // cmap (format 4)
+  const map = []; glyphs.forEach((g, i) => { if (g.code != null) map.push([g.code, i]); });
+  map.sort((a, b) => a[0] - b[0]);
+  const segs = [];
+  for (const [c, g] of map) {
+    const s = segs[segs.length - 1];
+    if (s && c === s.end + 1 && g === s.g0 + (c - s.start)) s.end = c; else segs.push({ start: c, end: c, g0: g });
+  }
+  segs.push({ start: 0xFFFF, end: 0xFFFF, g0: 0, last: true });
+  const sc = segs.length, len4 = 16 + sc * 8;
+  const sr = 2 * (1 << Math.floor(Math.log2(sc))), es = Math.floor(Math.log2(sr / 2));
+  const cmap = tbl(4 + 8 * 2 + len4, dv => {
+    dv.setUint16(0, 0); dv.setUint16(2, 2);
+    dv.setUint16(4, 0); dv.setUint16(6, 3); dv.setUint32(8, 20);
+    dv.setUint16(12, 3); dv.setUint16(14, 1); dv.setUint32(16, 20);
+    let o = 20;
+    dv.setUint16(o, 4); dv.setUint16(o + 2, len4); dv.setUint16(o + 4, 0); dv.setUint16(o + 6, sc * 2);
+    dv.setUint16(o + 8, sr); dv.setUint16(o + 10, es); dv.setUint16(o + 12, sc * 2 - sr);
+    let p = o + 14;
+    segs.forEach((s, i) => dv.setUint16(p + i * 2, s.end)); p += sc * 2 + 2;
+    segs.forEach((s, i) => dv.setUint16(p + i * 2, s.start)); p += sc * 2;
+    segs.forEach((s, i) => dv.setUint16(p + i * 2, s.last ? 1 : ((s.g0 - s.start) & 0xFFFF))); p += sc * 2;
+    // idRangeOffset 모두 0
+  });
+  // name
+  const fam = (familyName || 'My Handwriting').slice(0, 60);
+  let ps = fam.replace(/[^A-Za-z0-9-]/g, ''); if (!ps) ps = 'MyHandwriting'; ps = ps.slice(0, 50) + '-Regular';
+  const recs = [[1, fam], [2, 'Regular'], [3, ps + '-' + Date.now()], [4, fam], [5, 'Version 1.000'], [6, ps]];
+  const strs = recs.map(r => utf16be(r[1]));
+  const strLen = strs.reduce((a, b) => a + b.length, 0);
+  const name = tbl(6 + recs.length * 12 + strLen, dv => {
+    dv.setUint16(0, 0); dv.setUint16(2, recs.length); dv.setUint16(4, 6 + recs.length * 12);
+    let so = 0;
+    recs.forEach((r, i) => {
+      const o = 6 + i * 12;
+      dv.setUint16(o, 3); dv.setUint16(o + 2, 1); dv.setUint16(o + 4, 0x0409); dv.setUint16(o + 6, r[0]);
+      dv.setUint16(o + 8, strs[i].length); dv.setUint16(o + 10, so); so += strs[i].length;
+    });
+  });
+  { let o = 6 + recs.length * 12; for (const s of strs) { name.set(s, o); o += s.length; } }
+  const post = tbl(32, dv => { dv.setUint32(0, 0x00030000); dv.setInt16(8, -100); dv.setInt16(10, 50); });
+
+  const tables = { 'OS/2': os2, cmap, glyf, head, hhea, hmtx, loca, maxp, name, post };
+  const tags = Object.keys(tables).sort();
+  const nT = tags.length, srT = 16 * (1 << Math.floor(Math.log2(nT)));
+  let total = 12 + nT * 16; for (const t of tags) total += (tables[t].length + 3) & ~3;
+  const out = new Uint8Array(total), dv = new DataView(out.buffer);
+  dv.setUint32(0, 0x00010000); dv.setUint16(4, nT); dv.setUint16(6, srT); dv.setUint16(8, Math.log2(srT / 16)); dv.setUint16(10, nT * 16 - srT);
+  let off = 12 + nT * 16, headOff = 0;
+  tags.forEach((t, i) => {
+    const b = tables[t], r = 12 + i * 16;
+    for (let k = 0; k < 4; k++) dv.setUint8(r + k, t.charCodeAt(k));
+    dv.setUint32(r + 4, checksum(b)); dv.setUint32(r + 8, off); dv.setUint32(r + 12, b.length);
+    out.set(b, off); if (t === 'head') headOff = off;
+    off += (b.length + 3) & ~3;
+  });
+  dv.setUint32(headOff + 8, (0xB1B0AFBA - checksum(out)) >>> 0);
+  return out;
+}
+
+function notdefContours() {
+  const o = [[80, -100], [80, 780], [580, 780], [580, -100]];        // 시계방향(바깥)
+  const i = [[140, -40], [520, -40], [520, 720], [140, 720]];        // 반시계(안쪽 구멍)
+  return [o, i];
+}
+
+// 전체 글꼴 만들기 (onProgress(0~1) 호출, 비동기로 끊어서 처리)
+if (typeof module !== 'undefined') module.exports = { CHO, JUNG, JONG, SYMBOLS, SYM_PHRASES, LISTS, ZONES, decomp, layoutOf, jtype, autoRoles, splitPhrase, stripLayout, strokeToPoly, Composer, makeFont, bboxOf, toPolys };
+
+</script>
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const COL = { c: '#2f6fde', v: '#169a5a', f: '#e0791b', x: '#23211c' };
+const KEY = 'handfont-v2';
+const DEF = { v: 2, mode: 'basic', sym: false, touch: false, guide: false, size: 'm', phr: {}, custom: [], name: '', weight: 30, press: true, norm: 80, quotes: true };
+let S = Object.assign({}, DEF);
+try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s && s.phr) S = Object.assign({}, DEF, s); } catch (e) {}
+function persist() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('on'), 1800); }
+const hcount = p => [...p].filter(c => decomp(c)).length;
+$('nBasic').textContent = LISTS.basic.reduce((a, p) => a + hcount(p), 0);
+$('nFull').textContent = LISTS.extra.reduce((a, p) => a + hcount(p), 0);
+
+let list = [], cur = 0;
+function buildList() {
+  list = LISTS.basic.slice();
+  if (S.mode === 'full') list = list.concat(LISTS.extra);
+  if (S.quotes) list = list.concat(QUOTES.map(q => q[0]));
+  list = list.concat(S.custom);
+  if (S.sym) list = list.concat(SYM_PHRASES);
+}
+const done = p => S.phr[p] && S.phr[p].length;
+
+// ---------- 글자별 획 (모든 줄에서) ----------
+const splitCache = new Map();
+function splitOf(p) {
+  const rec = S.phr[p] || [];
+  const key = p + '|' + rec.length + '|' + rec.map(r => r.fix || '').join('');
+  const c = splitCache.get(p);
+  if (c && c.key === key) return c.v;
+  const v = splitPhrase(p, rec); splitCache.set(p, { key, v }); return v;
+}
+function writtenMap() {
+  const w = {};
+  const order = list.concat(Object.keys(S.phr).filter(p => !list.includes(p)));
+  for (const p of order) if (done(p)) for (const cell of splitOf(p)) if (!w[cell.ch]) w[cell.ch] = cell.strokes;
+  return w;
+}
+
+// ---------- 원고지 줄 ----------
+const strip = $('strip'), bg = $('bg'), ink = $('ink');
+const bctx = bg.getContext('2d'), ictx = ink.getContext('2d');
+let cell = 110, dpr = 1, lay = null, checkMode = false;
+const SIZES = { s: 78, m: 108, l: 140 };
+function phrase() { return list[cur]; }
+function layoutStrip() {
+  lay = stripLayout(phrase());
+  const units = lay.width / 1000;
+  const avail = Math.min(window.innerWidth - 70, 1220);
+  cell = Math.floor(Math.min(SIZES[S.size], avail / units));
+  dpr = window.devicePixelRatio || 1;
+  const W = Math.ceil(units * cell), H = cell;
+  strip.style.width = W + 'px'; strip.style.height = H + 'px';
+  for (const c of [bg, ink]) { c.width = W * dpr; c.height = H * dpr; c.style.width = W + 'px'; c.style.height = H + 'px'; }
+  drawBg(); drawInk();
+}
+function drawBg() {
+  const k = cell / 1000;
+  bctx.setTransform(dpr * k, 0, 0, dpr * k, 0, 0);
+  bctx.clearRect(0, 0, lay.width, 1000);
+  for (const c of lay.cells) {
+    if (c.space) continue;
+    bctx.fillStyle = '#fff'; bctx.fillRect(c.x0, 0, c.w, 1000);
+    bctx.strokeStyle = '#efe7da'; bctx.lineWidth = 1.2 / k; bctx.setLineDash([6 / k, 6 / k]);
+    bctx.beginPath(); bctx.moveTo(c.x0 + 500, 40); bctx.lineTo(c.x0 + 500, 960); bctx.moveTo(c.x0 + 40, 500); bctx.lineTo(c.x0 + 960, 500); bctx.stroke();
+    bctx.setLineDash([]); bctx.strokeStyle = '#dcb3a3'; bctx.lineWidth = 1.5 / k;
+    bctx.strokeRect(c.x0 + 0.75 / k, 0.75 / k, c.w - 1.5 / k, 1000 - 1.5 / k);
+    if (S.guide) {
+      bctx.save(); bctx.fillStyle = 'rgba(35,33,28,0.09)'; bctx.font = '400 760px "Noto Sans KR", sans-serif';
+      bctx.textAlign = 'center'; bctx.textBaseline = 'middle'; bctx.fillText(c.ch, c.x0 + 500, 530); bctx.restore();
+    }
+  }
+}
+function rolesOfStrokes() {
+  const rec = S.phr[phrase()] || [], roles = rec.map(() => 'x');
+  if (!checkMode) return roles;
+  for (const c of splitOf(phrase())) c.idx.forEach((k, j) => roles[k] = c.strokes[j].r);
+  return roles;
+}
+function drawInk() {
+  const k = cell / 1000;
+  ictx.setTransform(dpr * k, 0, 0, dpr * k, 0, 0);
+  ictx.clearRect(0, 0, lay.width, 1000);
+  const rec = S.phr[phrase()] || [], roles = rolesOfStrokes();
+  rec.forEach((st, i) => {
+    ictx.fillStyle = COL[roles[i]] || COL.x;
+    const poly = strokeToPoly(st.p, S.weight, S.press);
+    ictx.beginPath(); poly.forEach((q, j) => j ? ictx.lineTo(q[0], q[1]) : ictx.moveTo(q[0], q[1])); ictx.closePath(); ictx.fill();
+  });
+}
+
+let penSeen = false, drawing = null;
+function toU(e) { const r = ink.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * lay.width, (e.clientY - r.top) / r.height * 1000]; }
+const pr = e => e.pointerType === 'pen' ? (e.pressure || 0.5) : 0.5;
+ink.addEventListener('pointerdown', e => {
+  if (e.pointerType === 'pen') penSeen = true;
+  if (e.pointerType === 'touch' && penSeen && !S.touch) return;
+  if (drawing) return;
+  e.preventDefault();
+  const [x, y] = toU(e);
+  if (checkMode) { fixAt(x, y); return; }
+  ink.setPointerCapture(e.pointerId);
+  drawing = { id: e.pointerId, pts: [[x, y, pr(e)]] };
+});
+ink.addEventListener('pointermove', e => {
+  if (!drawing || e.pointerId !== drawing.id) return;
+  e.preventDefault();
+  const evs = (e.getCoalescedEvents && e.getCoalescedEvents()) || [];
+  for (const ev of (evs.length ? evs : [e])) {
+    const [x, y] = toU(ev), last = drawing.pts[drawing.pts.length - 1];
+    if (Math.hypot(x - last[0], y - last[1]) < 3) continue;
+    const p = pr(ev); drawing.pts.push([x, y, p]);
+    ictx.strokeStyle = COL.x; ictx.lineCap = 'round'; ictx.lineJoin = 'round';
+    ictx.lineWidth = S.weight * (S.press ? (0.65 + 0.7 * p) : 1);
+    ictx.beginPath(); ictx.moveTo(last[0], last[1]); ictx.lineTo(x, y); ictx.stroke();
+  }
+});
+function endStroke(e) {
+  if (!drawing || e.pointerId !== drawing.id) return;
+  const pts = drawing.pts.map(p => [Math.round(p[0] * 10) / 10, Math.round(p[1] * 10) / 10, Math.round(p[2] * 100) / 100]);
+  drawing = null;
+  (S.phr[phrase()] = S.phr[phrase()] || []).push({ p: pts });
+  persist(); drawInk(); refreshChips(); updateProgress();
+}
+ink.addEventListener('pointerup', endStroke);
+ink.addEventListener('pointercancel', endStroke);
+
+function fixAt(x, y) {
+  const rec = S.phr[phrase()] || [];
+  let bi = -1, bd = 70;
+  rec.forEach((st, i) => { for (const p of st.p) { const d = Math.hypot(p[0] - x, p[1] - y); if (d < bd) { bd = d; bi = i; } } });
+  if (bi < 0) return;
+  const cellIdx = strokeCell(lay, rec[bi].p), ch = lay.cells[cellIdx].ch, d = decomp(ch);
+  if (!d) return;
+  const opts = d.f ? ['c', 'v', 'f'] : ['c', 'v'];
+  const now = rolesOfStrokes()[bi];
+  rec[bi].fix = opts[(opts.indexOf(now) + 1) % opts.length];
+  persist(); drawInk();
+  toast('→ ' + { c: '첫소리', v: '모음', f: '받침' }[rec[bi].fix]);
+}
+
+$('bUndo').onclick = () => { const a = S.phr[phrase()]; if (a && a.length) { a.pop(); if (!a.length) delete S.phr[phrase()]; persist(); drawInk(); refreshChips(); updateProgress(); } };
+$('bClear').onclick = () => { delete S.phr[phrase()]; persist(); drawInk(); refreshChips(); updateProgress(); };
+$('bCheck').onclick = () => {
+  checkMode = !checkMode;
+  $('bCheck').classList.toggle('sel', checkMode); $('bCheck').textContent = checkMode ? '확인 끝' : '자모 확인';
+  $('legend').classList.toggle('on', checkMode); drawInk();
+};
+$('bPrev').onclick = () => go(cur - 1);
+$('bNext').onclick = () => {
+  for (let i = 1; i <= list.length; i++) { const j = (cur + i) % list.length; if (!done(list[j])) { go(j); return; } }
+  go(Math.min(cur + 1, list.length - 1));
+};
+function go(i) {
+  if (i < 0 || i >= list.length) return;
+  cur = i;
+  $('phText').textContent = phrase();
+  const q = QUOTES.find(x => x[0] === phrase());
+  $('phInfo').textContent = (cur + 1) + ' / ' + list.length + (q ? ' · ' + q[1] : '');
+  layoutStrip(); refreshChips();
+}
+
+// ---------- 목록 ----------
+function refreshChips() {
+  const g = $('chips'); g.innerHTML = '';
+  const nb = LISTS.basic.length, nq = nb + (S.mode === 'full' ? LISTS.extra.length : 0), ne = nq + (S.quotes ? QUOTES.length : 0), nc = ne + S.custom.length;
+  list.forEach((p, i) => {
+    if (i === 0) sec('기본');
+    if (i === nb && S.mode === 'full') sec('정밀 (더 자연스러운 조합)');
+    if (i === nq && S.quotes) sec('시·명언 (천천히 또박또박)');
+    if (i === ne && S.custom.length) sec('내 문장');
+    if (i === nc && S.sym) sec('숫자·기호');
+    const b = document.createElement('button');
+    b.className = 'chip' + (done(p) ? ' done' : '') + (i === cur ? ' cur' : '');
+    b.textContent = p; b.onclick = () => go(i); g.append(b);
+  });
+  function sec(t) { const d = document.createElement('div'); d.className = 'chip sec'; d.textContent = t; g.append(d); }
+}
+function updateProgress() {
+  const n = list.filter(done).length;
+  $('progBar').style.width = (n / list.length * 100) + '%';
+  $('progTxt').textContent = `${list.length}줄 중 ${n}줄 완료` + (n === list.length ? ' — ② 미리보기·만들기로 가 보세요!' : '');
+}
+function setOpts() {
+  $('mBasic').classList.toggle('on', S.mode === 'basic'); $('mFull').classList.toggle('on', S.mode === 'full');
+  document.querySelectorAll('#sizeSeg button').forEach(b => b.classList.toggle('on', b.dataset.s === S.size));
+  $('optQuote').checked = S.quotes; $('optSym').checked = S.sym; $('optTouch').checked = S.touch; $('optGuide').checked = S.guide;
+  const p = phrase(); buildList();
+  let i = list.indexOf(p); if (i < 0) i = 0;
+  go(i); updateProgress();
+}
+$('mBasic').onclick = () => { S.mode = 'basic'; persist(); setOpts(); };
+$('mFull').onclick = () => { S.mode = 'full'; persist(); setOpts(); };
+document.querySelectorAll('#sizeSeg button').forEach(b => b.onclick = () => { S.size = b.dataset.s; persist(); setOpts(); });
+$('optQuote').onchange = e => { S.quotes = e.target.checked; persist(); setOpts(); };
+$('optSym').onchange = e => { S.sym = e.target.checked; persist(); setOpts(); };
+$('optTouch').onchange = e => { S.touch = e.target.checked; persist(); };
+$('optGuide').onchange = e => { S.guide = e.target.checked; persist(); drawBg(); };
+$('bAdd').onclick = () => {
+  const t = $('myText').value.trim().replace(/\s+/g, ' ');
+  if (!t) return;
+  if (!S.custom.includes(t) && !list.includes(t)) S.custom.push(t);
+  $('myText').value = ''; persist(); buildList(); go(list.indexOf(t)); updateProgress();
+};
+
+// ---------- 탭 ----------
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('main section').forEach(s => s.classList.toggle('on', s.id === 'tab-' + b.dataset.tab));
+  if (b.dataset.tab === 'make') enterMake();
+  if (b.dataset.tab === 'write') layoutStrip();
+});
+
+// ---------- 미리보기·만들기 ----------
+let comp = null, built = null;
+function enterMake() {
+  $('fName').value = S.name; $('fWeight').value = S.weight; $('wVal').textContent = S.weight; $('fPress').checked = S.press;
+  $('fNorm').value = S.norm; $('nVal').textContent = normTxt();
+  const w = writtenMap(); comp = new Composer(w, S.norm / 100);
+  $('sCells').textContent = Object.keys(w).filter(c => decomp(c)).length + '자';
+  $('sCover').textContent = comp.coverage().toLocaleString() + ' / 11,172';
+  drawPreview();
+}
+function drawPreview() {
+  const cv = $('preview'), W = cv.clientWidth || 600, size = W > 600 ? 58 : 44;
+  const lines = [];
+  for (const raw of $('pvText').value.split('\n')) {
+    let line = [], x = 0;
+    for (const ch of raw) {
+      const adv = ch === ' ' ? 0.32 : (SYMBOLS.includes(ch) ? 0.6 : 1);
+      if (x + adv * size > W - 24 && line.length) { lines.push(line); line = []; x = 0; }
+      line.push(ch); x += adv * size;
+    }
+    lines.push(line);
+  }
+  const H = Math.max(140, lines.length * size * 1.3 + 30);
+  cv.width = W * dpr; cv.height = H * dpr; cv.style.height = H + 'px';
+  const c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, W, H);
+  let y = 16;
+  for (const line of lines) {
+    let x = 12;
+    for (const ch of line) {
+      if (ch === ' ') { x += size * 0.32; continue; }
+      const st = comp.glyph(ch);
+      if (st && st.length) {
+        let dx = 0, adv = 1;
+        if (SYMBOLS.includes(ch)) { const b = bboxOf(st); dx = 70 - b.x0; adv = (b.x1 - b.x0 + 140 + S.weight) / 1000; }
+        c.save(); c.translate(x, y); c.scale(size / 1000, size / 1000); c.fillStyle = '#23211c'; c.beginPath();
+        for (const p of toPolys(st, S.weight, S.press)) p.forEach((q, j) => j ? c.lineTo(q[0] + dx, q[1]) : c.moveTo(q[0] + dx, q[1]));
+        c.fill('nonzero'); c.restore();
+        x += size * adv;
+      } else {
+        c.fillStyle = '#cfc9bb'; c.font = `${size * 0.8}px "Noto Sans KR", sans-serif`; c.textBaseline = 'top';
+        c.fillText(ch, x, y + size * 0.06); x += c.measureText(ch).width;
+      }
+    }
+    y += size * 1.3;
+  }
+}
+let pvT = null;
+const reset = () => { built = null; $('bDown').style.display = 'none'; };
+$('pvText').oninput = () => { clearTimeout(pvT); pvT = setTimeout(drawPreview, 150); };
+$('fWeight').oninput = e => { S.weight = +e.target.value; $('wVal').textContent = S.weight; clearTimeout(pvT); pvT = setTimeout(drawPreview, 60); persist(); reset(); };
+const normTxt = () => S.norm === 0 ? '끔 (쓴 그대로)' : S.norm >= 100 ? '최대' : S.norm + '%';
+$('fNorm').oninput = e => { S.norm = +e.target.value; $('nVal').textContent = normTxt(); comp = new Composer(writtenMap(), S.norm / 100); clearTimeout(pvT); pvT = setTimeout(drawPreview, 80); persist(); reset(); };
+$('fPress').onchange = e => { S.press = e.target.checked; drawPreview(); persist(); reset(); };
+$('fName').oninput = e => { S.name = e.target.value; persist(); reset(); };
+
+// 파일 저장: Claude 화면에서는 downloads 기능(누를 때마다 확인), 일반 웹(GitHub Pages 등)에서는 바로 내려받기
+async function getDl() {
+  const c = window.claude;
+  if (!c || typeof c.use !== 'function') return null;
+  try { return await c.use('downloads'); } catch (e) { return null; }
+}
+async function saveFile(filename, data) {
+  const d = await getDl();
+  if (d) {
+    try { await d.save({ filename, data }); return 'ok'; }
+    catch (err) {
+      const code = (err && err.code) || 'unknown';
+      if (code === 'declined') return 'declined';
+      throw { code };
+    }
+  }
+  if (window.claude) throw { code: 'no-downloads' };
+  const url = URL.createObjectURL(data);
+  const a = document.createElement('a'); a.href = url; a.download = filename; document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+  return 'ok';
+}
+const SAVE_HELP = {
+  'rate_limited': '저장 확인 창이 이미 떠 있거나 너무 자주 눌렀어요. 잠시 뒤 다시 눌러 주세요.',
+  'too_large': '파일이 너무 커요. 굵기를 조금 줄여 다시 만들어 보세요.',
+};
+function saveErr(e) {
+  const code = (e && e.code) || 'unknown';
+  return SAVE_HELP[code] || `이 화면에서는 파일 저장이 막혀 있어요 (코드: ${code}). 크롬이나 삼성 인터넷에서 링크를 직접 열거나, 선생님이 올린 GitHub Pages 주소에서 다시 받아 주세요. 쓴 글씨는 ③에서 진행 파일로 옮길 수 있어요.`;
+}
+function fileBase() { return (S.name || '나의손글씨').replace(/[\\/:*?"<>|]/g, '').trim() || '나의손글씨'; }
+
+$('bBuild').onclick = async () => {
+  const msg = $('buildMsg'); msg.className = 'msg';
+  if (!Object.keys(S.phr).length) { msg.textContent = '먼저 ① 쓰기에서 글씨를 써 주세요.'; return; }
+  $('bBuild').disabled = true; $('prog').style.display = 'block'; reset();
+  msg.textContent = '폰트를 만들고 있어요… (태블릿에서는 30초쯤 걸릴 수 있어요)';
+  try {
+    comp = new Composer(writtenMap(), S.norm / 100);
+    const r = await makeFont(comp, S.name || '나의 손글씨', S.weight, S.press, p => { $('buildBar').style.width = (p * 100) + '%'; });
+    built = r;
+    msg.textContent = `완성! 한글 ${r.count.toLocaleString()}자가 들어 있어요 (${(r.bytes.length / 1048576).toFixed(1)}MB).`;
+    $('bDown').style.display = 'block';
+  } catch (e) { msg.className = 'msg err'; msg.textContent = '만드는 중 문제가 생겼어요: ' + (e.message || e); }
+  $('bBuild').disabled = false;
+};
+$('bDown').onclick = async () => {
+  if (!built) return;
+  const btn = $('bDown'); btn.disabled = true;
+  try {
+    const r = await saveFile(fileBase() + '.ttf', new Blob([built.bytes], { type: 'font/ttf' }));
+    if (r === 'ok') { toast('폰트 파일을 저장했어요'); $('buildMsg').className = 'msg'; $('buildMsg').textContent = '저장했어요! 다운로드(내 파일) 폴더에서 .ttf 파일을 찾아 캔바에 올리면 돼요.'; }
+    else if (r === 'declined') toast('저장을 취소했어요. 다시 누르면 돼요');
+  } catch (e) { $('buildMsg').className = 'msg err'; $('buildMsg').textContent = saveErr(e); }
+  btn.disabled = false;
+};
+
+// ---------- 저장·불러오기 ----------
+$('bSaveJson').onclick = async () => {
+  try {
+    const r = await saveFile(fileBase() + '_진행.json', new Blob([JSON.stringify(S)], { type: 'application/json' }));
+    if (r === 'ok') { $('saveMsg').className = 'msg'; $('saveMsg').textContent = '저장했어요. 다음 시간에 [진행 파일 불러오기]로 이어 쓰면 돼요.'; }
+  } catch (e) { $('saveMsg').className = 'msg err'; $('saveMsg').textContent = saveErr(e); }
+};
+$('bLoadJson').onclick = () => $('fileIn').click();
+$('fileIn').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const o = JSON.parse(await f.text());
+    if (!o || typeof o.phr !== 'object') throw new Error('형식');
+    S = Object.assign({}, DEF, o); splitCache.clear();
+    persist(); setOpts();
+    $('saveMsg').className = 'msg'; $('saveMsg').textContent = `불러왔어요. 쓴 줄 ${Object.keys(S.phr).length}개.`;
+  } catch (err) { $('saveMsg').className = 'msg err'; $('saveMsg').textContent = '진행 파일을 읽지 못했어요. 이 앱에서 저장한 .json 파일인지 확인해 주세요.'; }
+  e.target.value = '';
+};
+let resetArm = false;
+$('bReset').onclick = () => {
+  const btn = $('bReset');
+  if (!resetArm) { resetArm = true; btn.textContent = '정말 모두 지울까요? 한 번 더 누르면 지워져요'; btn.style.borderColor = '#b4321e'; setTimeout(() => { resetArm = false; btn.textContent = '처음부터 다시 쓰기'; btn.style.borderColor = ''; }, 4000); return; }
+  S.phr = {}; S.custom = []; splitCache.clear(); persist(); setOpts(); resetArm = false; btn.textContent = '처음부터 다시 쓰기'; btn.style.borderColor = '';
+  $('resetMsg').textContent = '모두 지웠어요.';
+};
+
+// ---------- 시작 ----------
+window.addEventListener('resize', () => { if ($('tab-write').classList.contains('on')) layoutStrip(); });
+buildList(); setOpts();
+if (document.fonts) document.fonts.ready.then(() => { if (S.guide) drawBg(); });
+window.__hf = { S: () => S, list: () => list, cur: () => cur, writtenMap };
+})();
+</script>
+</body>
+</html>
