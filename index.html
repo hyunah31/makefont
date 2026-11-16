@@ -337,7 +337,9 @@ function strokeCell(lay, pts) {
 function sInfo(p) {
   let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9, cx = 0, cy = 0;
   for (const q of p) { x0 = Math.min(x0, q[0]); y0 = Math.min(y0, q[1]); x1 = Math.max(x1, q[0]); y1 = Math.max(y1, q[1]); cx += q[0]; cy += q[1]; }
-  return { x0, y0, x1, y1, w: x1 - x0, h: y1 - y0, cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, mx: cx / p.length, my: cy / p.length };
+  let L = 0; for (let i = 1; i < p.length; i++) L += Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]);
+  const chord = Math.hypot(p[p.length - 1][0] - p[0][0], p[p.length - 1][1] - p[0][1]);
+  return { x0, y0, x1, y1, w: x1 - x0, h: y1 - y0, cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, mx: cx / p.length, my: cy / p.length, st: L > 0 ? chord / L : 1 };
 }
 const VPART = { 9: 0, 10: 1, 11: 20, 14: 4, 15: 5, 16: 20, 19: 20 };
 const HPART = { 9: 8, 10: 8, 11: 8, 14: 13, 15: 13, 16: 13, 19: 18 };
@@ -364,7 +366,7 @@ function autoRoles(strokes, d) {
 
   if (t === 0 || t === 2) {
     const v = t === 0 ? d.j : VPART[d.j];
-    const cand = [...Array(n).keys()].filter(i => isV(i) && I[i].h > 0.33 * H).sort((a, b) => I[b].cx - I[a].cx);
+    const cand = [...Array(n).keys()].filter(i => isV(i) && I[i].h > 0.33 * H && I[i].st > 0.7 && I[i].y0 < Y0 + 0.45 * H).sort((a, b) => I[b].cx - I[a].cx);
     if (!cand.length) return fallback();
     const stems = [cand[0]];
     if (STEMS2.includes(v)) { const s2 = [...Array(n).keys()].filter(i => i !== cand[0] && I[i].h > 1.3 * I[i].w && I[i].cx < I[cand[0]].cx && I[i].cx > X0 + 0.3 * W && I[i].h > 0.3 * I[cand[0]].h).sort((a, b) => I[b].cx - I[a].cx)[0]; if (s2 != null) stems.push(s2); }
@@ -376,7 +378,7 @@ function autoRoles(strokes, d) {
     // 기둥에 붙은 갈고리·꺾임 조각
     for (const i of free()) if (I[i].x0 > stemX0 - 0.03 * W && I[i].cx < stemX1 + 0.05 * W && I[i].cy > stemTop - 0.05 * H && I[i].cy < stemBot - 0.06 * H && I[i].w < 0.3 * W) R[i] = 'v';
     if (LTICK[v]) {
-      const c = free().filter(i => !isV(i) && I[i].x1 > stemX0 - 0.24 * W && I[i].x1 < stemX1 + 0.12 * W && I[i].x0 < stemX0 && I[i].x0 > X0 + 0.12 * W && I[i].cy > stemTop + 0.05 * sH && I[i].cy < stemBot - 0.03 * sH && I[i].w < 0.7 * W)
+      const c = free().filter(i => I[i].st > 0.8 && !isV(i) && I[i].x1 > stemX0 - 0.24 * W && I[i].x1 < stemX1 + 0.12 * W && I[i].x0 < stemX0 && I[i].x0 > X0 + 0.12 * W && I[i].cy > stemTop + 0.05 * sH && I[i].cy < stemBot - 0.03 * sH && I[i].w < 0.7 * W)
         .sort((a, b) => Math.abs(I[a].x1 - stemX0) - Math.abs(I[b].x1 - stemX0));
       c.slice(0, LTICK[v]).forEach(i => R[i] = 'v');
     }
@@ -386,18 +388,24 @@ function autoRoles(strokes, d) {
     let cand = free().filter(i => isH(i) && I[i].w > (t === 1 ? 0.38 : 0.25) * W);
     if (t === 2) cand = cand.filter(i => I[i].cx < stemX0);
     if (!cand.length) return fallback();
-    const score = i => I[i].w * (1 - (d.f ? 0.35 * Math.max(0, (I[i].cy - Y0) / H - 0.55) : 0));
-    bar = cand.sort((a, b) => score(b) - score(a))[0];
+    // 넓은 가로획 후보 중: 받침 없으면 가장 아래, 받침 있으면 가운데에 가까운 것 (초성 ㄷ·ㅈ 윗줄을 모음으로 착각하지 않게)
+    const maxW = Math.max(...cand.map(i => I[i].w));
+    const wide = cand.filter(i => I[i].w >= 0.65 * maxW && I[i].st > 0.75);
+    const pool = wide.length ? wide : cand;
+    bar = d.f ? pool.sort((a, b) => Math.abs(I[a].cy - (Y0 + 0.5 * H)) - Math.abs(I[b].cy - (Y0 + 0.5 * H)))[0]
+              : pool.sort((a, b) => I[b].cy - I[a].cy)[0];
     R[bar] = 'v'; barY = I[bar].cy;
     const [cnt, dir] = HTICK[h];
     if (cnt) {
       const B = I[bar];
-      const c = free().filter(i => I[i].h >= I[i].w * 0.6 && I[i].cx > B.x0 - 0.05 * W && I[i].cx < B.x1 + 0.05 * W && I[i].h < 0.8 * H &&
+      const c = free().filter(i => I[i].st > 0.7 && I[i].h >= I[i].w * 0.6 && I[i].cx > B.x0 - 0.05 * W && I[i].cx < B.x1 + 0.05 * W && I[i].h < 0.8 * H &&
         (dir === 'up' ? (Math.abs(I[i].y1 - barY) < 0.2 * H && I[i].cy < barY) : (Math.abs(I[i].y0 - barY) < 0.2 * H && I[i].cy > barY)))
         .sort((a, b) => (dir === 'up' ? Math.abs(I[a].y1 - barY) - Math.abs(I[b].y1 - barY) : Math.abs(I[a].y0 - barY) - Math.abs(I[b].y0 - barY)));
       c.slice(0, cnt).forEach(i => R[i] = 'v');
     }
   }
+  // 세로모음 기둥보다 아래에 있는 조각은 모음이 아님(받침으로)
+  if (d.f && stemBot != null) for (let i = 0; i < n; i++) if (R[i] === 'v' && I[i].h < 0.5 * (stemBot - stemTop) && I[i].my > stemBot - 0.02 * H) R[i] = null;
   if (d.f) {
     let thr;
     if (t === 0) thr = stemBot - 0.04 * H;
@@ -474,7 +482,8 @@ function splitPhrase(text, rec) {
       if (sg.si === 0 || sg.si === sg.nseg - 1) return false;
       const a = sg.p[0], b = sg.p[sg.p.length - 1], dx = b[0] - a[0], dy = b[1] - a[1];
       const ang = Math.abs(Math.atan2(dy, dx) * 180 / Math.PI);
-      return dy < -25 && ang > 20 && ang < 160;
+      let L = 0; for (let j = 1; j < sg.p.length; j++) L += Math.hypot(sg.p[j][0] - sg.p[j - 1][0], sg.p[j][1] - sg.p[j - 1][1]);
+      return dy < -25 && ang > 20 && ang < 160 && Math.hypot(dx, dy) / (L || 1) > 0.85;
     };
     // 1차: 연결선 후보를 빼고 나눔 → 2차: 앞뒤 조각이 서로 다른 자모일 때만 연결선으로 확정
     const body = segs.filter(sg => !isLink(sg));
@@ -517,11 +526,19 @@ class Composer {
     if (hs.length >= 3) {
       const bs = hs.map(c => bboxOf(written[c].orig)).filter(Boolean);
       const med = a => { const b = a.slice().sort((x, y) => x - y); return b[b.length >> 1]; };
-      this.T = { size: med(bs.map(b => Math.max(b.x1 - b.x0, b.y1 - b.y0))), cx: med(bs.map(b => (b.x0 + b.x1) / 2)), cy: med(bs.map(b => (b.y0 + b.y1) / 2)) };
+      this.T = { size: med(bs.map(b => Math.max(b.x1 - b.x0, b.y1 - b.y0))), cx: med(bs.map(b => (b.x0 + b.x1) / 2)), cy: med(bs.map(b => (b.y0 + b.y1) / 2)),
+        h: med(bs.map(b => b.y1 - b.y0)), w: med(bs.map(b => b.x1 - b.x0)) };
+      // 같은 모양(세로모음/가로모음/받침 유무)끼리의 중간 크기 → 글자 키를 고르게
+      this.TL = [];
+      for (let L = 0; L < 6; L++) {
+        const bl = hs.filter(c => { const d = decomp(c); return layoutOf(d.j, d.f) === L; }).map(c => bboxOf(written[c].orig)).filter(Boolean);
+        this.TL[L] = bl.length >= 3 ? { w: med(bl.map(b => b.x1 - b.x0)), h: med(bl.map(b => b.y1 - b.y0)) } : null;
+      }
       const w2 = {};
       for (const c of Object.keys(written)) {
         const W = written[c];
-        const f = decomp(c) ? this.normFn(bboxOf(W.orig)) : this.globalFn();
+        const dd = decomp(c);
+        const f = dd ? this.normFn(bboxOf(W.orig), layoutOf(dd.j, dd.f)) : this.globalFn();
         w2[c] = { orig: moveS(W.orig, f), segs: W.segs.map(x => ({ r: x.r, p: moveS([x.p], f)[0] })) };
       }
       written = w2;
@@ -551,11 +568,21 @@ class Composer {
   }
   get G() { return Math.min(2.6, 740 / this.T.size); }
   globalFn() { const T = this.T, g = this.G; return (x, y) => [500 + (x - T.cx) * g, 480 + (y - T.cy) * g]; }
-  normFn(b) {
+  // 글자 하나를 기준 크기로: 세로모음 글자는 키, 가로모음 글자는 키·너비를 함께 맞춤
+  scaleFor(w, h, L, unit) {
+    w = Math.max(w, 1); h = Math.max(h, 1);
+    const tl = L != null && this.TL[L];
+    const T = this.T, Ht = (tl ? tl.h * 0.5 + T.h * 0.5 : T.h) * unit, Wt = (tl ? tl.w : T.w) * unit;
+    const t = L == null ? 0 : (L >> 1);
+    let r = t === 1 ? Math.sqrt((Ht / h) * (Wt / w)) : Ht / h;
+    r = Math.min(r, (T.size * unit * 1.2) / Math.max(w, h));   // 너무 커지지 않게
+    return Math.max(0.55, Math.min(1.8, Math.pow(r, this.norm)));
+  }
+  normFn(b, L) {
     const G = this.globalFn();
     if (!b) return G;
-    const size = Math.max(b.x1 - b.x0, b.y1 - b.y0, 1), k = this.norm;
-    const s = Math.pow(this.T.size / size, k), cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2;
+    const k = this.norm;
+    const s = this.scaleFor(b.x1 - b.x0, b.y1 - b.y0, L, 1), cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2;
     const tx = cx + (this.T.cx - cx) * k, ty = cy + (this.T.cy - cy) * k;
     return (x, y) => G(tx + (x - cx) * s, ty + (y - cy) * s);
   }
@@ -563,8 +590,7 @@ class Composer {
     if (!this.T) return strokes;
     if (done) { // 이미 확대된 좌표: 크기만 맞춤
       const b = bboxOf(strokes); if (!b) return strokes;
-      const size = Math.max(b.x1 - b.x0, b.y1 - b.y0, 1), k = this.norm, target = this.G * this.T.size;
-      const s = Math.pow(target / size, k), cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2;
+      const k = this.norm, s = this.scaleFor(b.x1 - b.x0, b.y1 - b.y0, this._L, this.G), cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2;
       const tx = cx + (500 - cx) * k, ty = cy + (480 - cy) * k;
       return moveS(strokes, (x, y) => [tx + (x - cx) * s, ty + (y - cy) * s]);
     }
@@ -639,7 +665,8 @@ class Composer {
       const tx = Math.min(Math.max(cx, 15 + (cx - bb.x0) * k), 985 - (bb.x1 - cx) * k), ty = Math.min(Math.max(cy, 15 + (cy - bb.y0) * k), 985 - (bb.y1 - cy) * k);
       all = moveS(all, (x, y) => [tx + (x - cx) * k, ty + (y - cy) * k]);
     }
-    return this.normalize(all, true);
+    this._L = L; const res = this.normalize(all, true); this._L = null;
+    return res;
   }
   fit(strokes, box) {
     const b = bboxOf(strokes); if (!b) return null;
@@ -909,7 +936,8 @@ function splitOf(p) {
 }
 function writtenMap() {
   const w = {};
-  const order = list.concat(Object.keys(S.phr).filter(p => !list.includes(p)));
+  // 내 문장(다시 쓴 글자)을 가장 먼저 → 마음에 안 드는 글자는 '내 문장'으로 다시 쓰면 바뀜
+  const order = S.custom.slice().reverse().concat(list.filter(p => !S.custom.includes(p)), Object.keys(S.phr).filter(p => !list.includes(p)));
   for (const p of order) if (done(p)) for (const cell of splitOf(p)) if (!w[cell.ch]) w[cell.ch] = { orig: cell.orig, segs: cell.strokes.filter(s => s.r !== 'k').map(s => ({ r: s.r, p: s.p })) };
   return w;
 }
