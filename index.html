@@ -85,7 +85,7 @@ ol.steps{padding-left:20px;margin:6px 0;font-size:14px;line-height:1.8}
   <div class="card writebox">
     <div class="phrase"><small id="phInfo"></small><span id="phText"></span></div>
     <div class="strip" id="strip"><canvas id="bg"></canvas><canvas id="ink"></canvas></div>
-    <div class="legend" id="legend"><span><i style="background:var(--c)"></i>첫소리</span><span><i style="background:var(--v)"></i>모음</span><span><i style="background:var(--f)"></i>받침</span><span>· 색이 틀린 획을 누르면 바뀌어요</span></div>
+    <div class="legend" id="legend"><span><i style="background:var(--c)"></i>첫소리</span><span><i style="background:var(--v)"></i>모음</span><span><i style="background:var(--f)"></i>받침</span><span><i style="background:#b9b3a6"></i>잇는 선</span><span>· 색이 틀린 부분을 누르면 바뀌어요</span></div>
     <div class="tools">
       <button class="b" id="bUndo">↶ 한 획</button>
       <button class="b" id="bClear">줄 지우기</button>
@@ -100,7 +100,7 @@ ol.steps{padding-left:20px;margin:6px 0;font-size:14px;line-height:1.8}
         <div class="seg"><button id="mBasic">기본 <span id="nBasic"></span>자</button><button id="mFull">정밀 +<span id="nFull"></span>자</button></div></div>
       <div class="row"><span class="lbl">칸 크기</span>
         <div class="seg" id="sizeSeg"><button data-s="s">작게</button><button data-s="m">보통</button><button data-s="l">크게</button></div></div>
-      <div class="row"><label><input type="checkbox" id="optGuide"> 흐린 글자 보며 쓰기</label><label><input type="checkbox" id="optQuote"> 시·명언 10줄</label><label><input type="checkbox" id="optSym"> 숫자·기호</label><label><input type="checkbox" id="optTouch"> 손가락으로도 쓰기</label></div>
+      <div class="row"><label><input type="checkbox" id="optGuide"> 흐린 글자 보며 쓰기</label><label><input type="checkbox" id="optMore"> 자주 쓰는 문장 30줄</label><label><input type="checkbox" id="optQuote"> 시·명언 10줄</label><label><input type="checkbox" id="optSym"> 숫자·기호</label><label><input type="checkbox" id="optTouch"> 손가락으로도 쓰기</label></div>
       <div class="bar"><div id="progBar"></div></div>
       <div class="hint" id="progTxt"></div>
       <div class="hint">평소 쓰는 크기와 모양 그대로 칸 안에 이어서 쓰면 돼요. 직접 쓴 글자는 폰트에 <b>그대로</b> 들어가고, 안 쓴 글자만 내 글씨의 자음·모음을 모아 만들어요.</div>
@@ -108,7 +108,7 @@ ol.steps{padding-left:20px;margin:6px 0;font-size:14px;line-height:1.8}
     <div class="card">
       <div class="chips" id="chips"></div>
       <div class="row" style="display:flex;gap:8px;margin-top:12px">
-        <input type="text" id="myText" maxlength="12" placeholder="내 문장 추가 (예: 내 이름, 자주 쓰는 말)">
+        <textarea id="myText" rows="2" maxlength="200" placeholder="내 문장 추가 — 이름, 좌우명, 자주 쓰는 말… 여러 줄도 돼요 (길면 자동으로 나눠요)" style="min-height:52px"></textarea>
         <button class="b" id="bAdd" style="white-space:nowrap;flex-shrink:0">추가</button>
       </div>
     </div>
@@ -123,6 +123,7 @@ ol.steps{padding-left:20px;margin:6px 0;font-size:14px;line-height:1.8}
       <label class="field"><span>글씨 크기 맞추기 <b id="nVal"></b></span><input type="range" id="fNorm" min="0" max="100" step="10"></label>
       <label style="font-size:14px;display:flex;gap:6px;align-items:center;margin-bottom:14px"><input type="checkbox" id="fPress"> S펜 필압(누르는 힘) 반영</label>
       <div class="stat"><span>직접 쓴 글자</span><b id="sCells">0</b></div>
+      <div class="stat"><span>자주 쓰는 글자 중 직접 쓴 글자</span><b id="sFreq">0</b></div>
       <div class="stat"><span>만들어지는 한글</span><b id="sCover">0 / 11,172</b></div>
       <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px">
         <button class="b pri" id="bBuild">폰트 파일 만들기</button>
@@ -290,6 +291,8 @@ function strokeToPoly(raw, base, useP) {
 // cells: { '가': [{r:'c'|'v'|'f'|'x', p:[[x,y,pressure],...]}, ...] }
 // ----- 쓰기 목록 (실제 단어·문장) -----
 const LISTS = {"basic":["동녘 하늘이 밝다","꽤 괜찮은 뷔페","볶음밥 먹자","회의 시간","수고했어요","놔둬","초콜릿 쿠키","모자를 씌워 줘","끝","쭉 뻗어","퀴즈 풀기","꿰뚫다","짧다","훑다","토끼","태양","낮에 꽃을 봤다","띄어쓰기","딸기 우유","예쁘다","삶","값","넋","앞","써","뭘","쉰","춰","좋다","튀었다","앉다","외곬","읊다","쬐다","걔"],"extra":["횡단보도","늴리리야","너무 귀여워","짜장면 짬뽕","웬일로 일찍 왔어?","주꾸미","쉬운 문제","따뜻한 차 한 잔","숲","느낌","캠프","비가 와요","꽉 잡아","뭐 해?","쪼개","충분","쑥","탕","통","팡","쥘","뛸","쾅","의사 선생님","씩씩한 친구","뜨거워","캬라멜","내 몫까지 먹어","과학 실험","체육 대회","됐다","세상","효도","삐약","조용"]};
+const MORE = ["진짜 너무 재미있었어", "생일 축하해 친구야", "항상 응원할게", "적어 두면 잊지 않아", "내일 학교에서 만나요", "위로가 되는 말 한마디", "여러분 반갑습니다", "계단 조심하세요", "경기 결과가 궁금해", "이거 봐봐 신기하다", "몰래 준비한 깜짝 파티", "선물을 받으며 웃었다", "그런데 왜 그랬어?", "문제를 풀어 보세요", "이번 주에 체육 대회가 있어", "개학이 얼마 안 남았다", "국어 시간에 소설을 읽었다", "화요일에 방과 후 수업", "인사를 잘하는 어린이", "많이 보고 싶었어", "우리 함께 해 보자", "알겠어 이따가 연락할게", "졸려서 일찍 잤어요", "행복한 하루 되세요", "정답은 바로 이것", "맛있는 저녁 먹었어?", "다음에 또 놀러 와", "감사의 마음을 전해요", "관찰 일기를 쓰자", "나는 중학교 삼 학년"];
+const FREQ_SYL = [...new Set('이다는의에하고가지를을서기로사어나한리도자수시인니대아해일게상정들적전국부주무있그라거제경것원구보우만성장위과동면내공문소오생마신비회요개학중연와여안실미관모화방물계세치분발행단진터했었습까네말각금데때러며야려선님친우오늘내일어정진짜너무좋같은없많린함께되저희봐할몰알괜찮재밌맛배고파졸심행복사랑마워미축응원팅'.split(''))];
 const QUOTES = [
   ['나 보기가 역겨워 가실 때에는', '김소월 「진달래꽃」'],
   ['엄마야 누나야 강변 살자', '김소월 「엄마야 누나야」'],
@@ -364,13 +367,16 @@ function autoRoles(strokes, d) {
     const cand = [...Array(n).keys()].filter(i => isV(i) && I[i].h > 0.33 * H).sort((a, b) => I[b].cx - I[a].cx);
     if (!cand.length) return fallback();
     const stems = [cand[0]];
-    if (STEMS2.includes(v)) { const s2 = cand.find(i => i !== cand[0] && I[i].cx < I[cand[0]].cx && I[i].h > 0.5 * I[cand[0]].h); if (s2 != null) stems.push(s2); }
+    if (STEMS2.includes(v)) { const s2 = [...Array(n).keys()].filter(i => i !== cand[0] && I[i].h > 1.3 * I[i].w && I[i].cx < I[cand[0]].cx && I[i].cx > X0 + 0.3 * W && I[i].h > 0.3 * I[cand[0]].h).sort((a, b) => I[b].cx - I[a].cx)[0]; if (s2 != null) stems.push(s2); }
     stems.forEach(i => R[i] = 'v');
     stemX0 = Math.min(...stems.map(i => I[i].x0)); stemTop = Math.min(...stems.map(i => I[i].y0)); stemBot = Math.max(...stems.map(i => I[i].y1));
     const sH = stemBot - stemTop;
+    const stemX1 = Math.max(...stems.map(i => I[i].x1));
     if (RTICK[v]) for (const i of free()) if (I[i].cx > stemX0 && I[i].cy > stemTop - 0.05 * H && I[i].cy < stemBot && I[i].w < 0.45 * W) R[i] = 'v';
+    // 기둥에 붙은 갈고리·꺾임 조각
+    for (const i of free()) if (I[i].x0 > stemX0 - 0.03 * W && I[i].cx < stemX1 + 0.05 * W && I[i].cy > stemTop - 0.05 * H && I[i].cy < stemBot - 0.06 * H && I[i].w < 0.3 * W) R[i] = 'v';
     if (LTICK[v]) {
-      const c = free().filter(i => !isV(i) && I[i].x1 > stemX0 - 0.14 * W && I[i].x1 < stemX0 + 0.1 * W && I[i].cy > stemTop + 0.08 * sH && I[i].cy < stemBot - 0.03 * sH && I[i].w < 0.42 * W)
+      const c = free().filter(i => !isV(i) && I[i].x1 > stemX0 - 0.24 * W && I[i].x1 < stemX1 + 0.12 * W && I[i].x0 < stemX0 && I[i].x0 > X0 + 0.12 * W && I[i].cy > stemTop + 0.05 * sH && I[i].cy < stemBot - 0.03 * sH && I[i].w < 0.7 * W)
         .sort((a, b) => Math.abs(I[a].x1 - stemX0) - Math.abs(I[b].x1 - stemX0));
       c.slice(0, LTICK[v]).forEach(i => R[i] = 'v');
     }
@@ -386,8 +392,8 @@ function autoRoles(strokes, d) {
     const [cnt, dir] = HTICK[h];
     if (cnt) {
       const B = I[bar];
-      const c = free().filter(i => I[i].h >= I[i].w * 0.6 && I[i].cx > B.x0 - 0.05 * W && I[i].cx < B.x1 + 0.05 * W && I[i].h < 0.45 * H &&
-        (dir === 'up' ? (Math.abs(I[i].y1 - barY) < 0.16 * H && I[i].cy < barY) : (Math.abs(I[i].y0 - barY) < 0.16 * H && I[i].cy > barY)))
+      const c = free().filter(i => I[i].h >= I[i].w * 0.6 && I[i].cx > B.x0 - 0.05 * W && I[i].cx < B.x1 + 0.05 * W && I[i].h < 0.8 * H &&
+        (dir === 'up' ? (Math.abs(I[i].y1 - barY) < 0.2 * H && I[i].cy < barY) : (Math.abs(I[i].y0 - barY) < 0.2 * H && I[i].cy > barY)))
         .sort((a, b) => (dir === 'up' ? Math.abs(I[a].y1 - barY) - Math.abs(I[b].y1 - barY) : Math.abs(I[a].y0 - barY) - Math.abs(I[b].y0 - barY)));
       c.slice(0, cnt).forEach(i => R[i] = 'v');
     }
@@ -408,19 +414,86 @@ function autoRoles(strokes, d) {
 
 // ----- 줄(문장) 단위 기록 → 글자별 획 -----
 // rec: [{p:[[x,y,pr]...], fix?:'c'|'v'|'f'}]  (x는 줄 전체 좌표)
+// 이어 쓴 획을 꺾이는 곳에서 나누기
+function segmentStroke(p) {
+  const n = p.length; if (n < 5) return [[0, n - 1]];
+  const cum = [0]; for (let i = 1; i < n; i++) cum.push(cum[i - 1] + Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]));
+  const total = cum[n - 1]; if (total < 70) return [[0, n - 1]];
+  const D = Math.max(16, Math.min(40, total * 0.07));
+  const turn = new Array(n).fill(0);
+  let a = 0, b = 0;
+  for (let i = 0; i < n; i++) {
+    while (a < i && cum[i] - cum[a + 1] >= D) a++;
+    if (b < i) b = i; while (b < n - 1 && cum[b] - cum[i] < D) b++;
+    if (cum[i] - cum[a] < D * 0.7 || cum[b] - cum[i] < D * 0.7) continue;
+    const ux = p[i][0] - p[a][0], uy = p[i][1] - p[a][1], vx = p[b][0] - p[i][0], vy = p[b][1] - p[i][1];
+    const c = (ux * vx + uy * vy) / (Math.hypot(ux, uy) * Math.hypot(vx, vy) || 1);
+    turn[i] = Math.acos(Math.max(-1, Math.min(1, c))) * 180 / Math.PI;
+  }
+  const cuts = [];
+  for (let i = 1; i < n - 1; i++) {
+    if (turn[i] < 58) continue;
+    let isMax = true;
+    for (let j = i - 1; j >= 0 && cum[i] - cum[j] < D; j--) if (turn[j] > turn[i]) { isMax = false; break; }
+    for (let j = i + 1; j < n && cum[j] - cum[i] < D; j++) if (turn[j] >= turn[i]) { isMax = false; break; }
+    if (!isMax) continue;
+    const last = cuts.length ? cuts[cuts.length - 1] : 0;
+    if (cum[i] - cum[last] < 22 || cum[n - 1] - cum[i] < 22) continue;
+    cuts.push(i);
+  }
+  const segs = []; let st = 0;
+  for (const c of cuts) { segs.push([st, c]); st = c; }
+  segs.push([st, n - 1]);
+  return segs;
+}
+// rec: [{p:[[x,y,pr]...], fx?:{segIndex:role}, fix?:role}]  (x는 줄 전체 좌표)
+// 펜을 대고만 있을 때 생기는 '압력 0짜리 점'은 버림
+function isJunk(st) {
+  const p = st.p; if (!p || !p.length) return true;
+  let L = 0, mp = 0;
+  for (let j = 0; j < p.length; j++) { mp = Math.max(mp, p[j][2] ?? 0.5); if (j) L += Math.hypot(p[j][0] - p[j - 1][0], p[j][1] - p[j - 1][1]); }
+  return mp < 0.05 && (L < 40 || p.length < 4);
+}
 function splitPhrase(text, rec) {
   const lay = stripLayout(text);
   const per = lay.cells.map(() => []);
-  rec.forEach((st, k) => { const ci = strokeCell(lay, st.p); if (ci >= 0) per[ci].push(k); });
+  rec.forEach((st, k) => { if (isJunk(st)) return; const ci = strokeCell(lay, st.p); if (ci >= 0) per[ci].push(k); });
   const out = [];
   lay.cells.forEach((c, ci) => {
     if (c.space || !per[ci].length) return;
-    const local = per[ci].map(k => rec[k].p.map(q => [q[0] - c.x0, q[1], q[2]]));
+    const orig = per[ci].map(k => rec[k].p.map(q => [q[0] - c.x0, q[1], q[2]]));
     const d = decomp(c.ch);
-    let roles;
-    if (d) { roles = autoRoles(local, d); per[ci].forEach((k, j) => { if (rec[k].fix) roles[j] = rec[k].fix; }); }
-    else roles = local.map(() => 'x');
-    out.push({ ch: c.ch, idx: per[ci], strokes: local.map((p, j) => ({ r: roles[j], p })) });
+    if (!d) { out.push({ ch: c.ch, idx: per[ci], orig, strokes: orig.map((p, j) => ({ r: 'x', p, k: per[ci][j], si: 0 })) }); return; }
+    const segs = [];
+    orig.forEach((p, j) => {
+      const parts = segmentStroke(p);
+      parts.forEach(([a, b], si) => segs.push({ p: p.slice(a, b + 1), k: per[ci][j], si, nseg: parts.length }));
+    });
+    // 글자 사이를 잇는 '연결선'(위로 올라가는 비스듬한 중간 조각)은 따로 표시
+    const isLink = sg => {
+      if (sg.si === 0 || sg.si === sg.nseg - 1) return false;
+      const a = sg.p[0], b = sg.p[sg.p.length - 1], dx = b[0] - a[0], dy = b[1] - a[1];
+      const ang = Math.abs(Math.atan2(dy, dx) * 180 / Math.PI);
+      return dy < -25 && ang > 20 && ang < 160;
+    };
+    // 1차: 연결선 후보를 빼고 나눔 → 2차: 앞뒤 조각이 서로 다른 자모일 때만 연결선으로 확정
+    const body = segs.filter(sg => !isLink(sg));
+    const roles = autoRoles(body.map(sg => sg.p), d);
+    body.forEach((sg, i) => sg.r = roles[i]);
+    segs.forEach((sg, i) => {
+      if (sg.r) return;
+      const prev = segs[i - 1], next = segs[i + 1];
+      if (prev && next && prev.k === sg.k && next.k === sg.k && prev.r && next.r && prev.r !== next.r) sg.r = 'k';
+      else sg.r = (prev && prev.k === sg.k && prev.r) || (next && next.k === sg.k && next.r) || 'c';
+    });
+    for (const sg of segs) {
+      let L = 0; for (let j = 1; j < sg.p.length; j++) L += Math.hypot(sg.p[j][0] - sg.p[j - 1][0], sg.p[j][1] - sg.p[j - 1][1]);
+      if (L < 15 && sg.nseg === 1) sg.r = 'k';   // 실수로 찍힌 점
+      const R = rec[sg.k];
+      if (R.fix) sg.r = R.fix;
+      if (R.fx && R.fx[sg.si]) sg.r = R.fx[sg.si];
+    }
+    out.push({ ch: c.ch, idx: per[ci], orig, strokes: segs.map(sg => ({ r: sg.r, p: sg.p, k: sg.k, si: sg.si })) });
   });
   return out;
 }
@@ -437,29 +510,37 @@ const clamp = (v, m) => Math.max(-m, Math.min(m, v));
 
 class Composer {
   // written: { 글자: [{r, p}] } (칸 좌표 0~1000)
+  // written: { 글자: {segs:[{r,p}], orig:[p]} } (칸 좌표 0~1000). orig = 실제 쓴 획(그대로 쓰기용), segs = 자모로 나눈 조각(조합용)
   constructor(written, norm = 0.8) {
-    // 글자 크기·위치 맞추기: 쓴 글자들의 중간 크기·중심으로 끌어당김
     this.norm = norm; this.T = null;
     const hs = Object.keys(written).filter(c => decomp(c));
     if (hs.length >= 3) {
-      const bs = hs.map(c => bboxOf(written[c].map(x => x.p))).filter(Boolean);
+      const bs = hs.map(c => bboxOf(written[c].orig)).filter(Boolean);
       const med = a => { const b = a.slice().sort((x, y) => x - y); return b[b.length >> 1]; };
       this.T = { size: med(bs.map(b => Math.max(b.x1 - b.x0, b.y1 - b.y0))), cx: med(bs.map(b => (b.x0 + b.x1) / 2)), cy: med(bs.map(b => (b.y0 + b.y1) / 2)) };
       const w2 = {};
       for (const c of Object.keys(written)) {
-        if (!decomp(c)) { w2[c] = written[c].map(x => ({ r: x.r, p: this.globalXf([x.p])[0] })); continue; }
-        const ns = this.normalize(written[c].map(x => x.p));
-        w2[c] = written[c].map((x, i) => ({ r: x.r, p: ns[i] }));
+        const W = written[c];
+        const f = decomp(c) ? this.normFn(bboxOf(W.orig)) : this.globalFn();
+        w2[c] = { orig: moveS(W.orig, f), segs: W.segs.map(x => ({ r: x.r, p: moveS([x.p], f)[0] })) };
       }
       written = w2;
     }
     this.written = written; this.sm = [];
     const acc = {};
     for (const ch of Object.keys(written)) {
-      const st = written[ch]; const d = decomp(ch); if (!d) continue;
+      const st = written[ch].segs; const d = decomp(ch); if (!d) continue;
       const L = layoutOf(d.j, d.f), parts = {};
       for (const r of ['c', 'v', 'f']) { const s = st.filter(x => x.r === r).map(x => x.p); if (s.length) parts[r] = { s, bb: bboxOf(s) }; }
       if (!parts.c || !parts.v || (d.f && !parts.f)) continue;
+      { // 모음의 기둥(세로) x 위치와 가로획 y 위치
+        const P = parts.v, H = P.bb.y1 - P.bb.y0, W = P.bb.x1 - P.bb.x0;
+        let sx = null, by = null, bw = 0;
+        for (const q of P.s) { const b = bboxOf([q]), w = b.x1 - b.x0, h = b.y1 - b.y0;
+          if (h > 1.5 * w && h > 0.4 * H && (sx === null || b.x0 < sx)) sx = b.x0;
+          if (w > 1.5 * h && w > bw) { bw = w; by = (b.y0 + b.y1) / 2; } }
+        P.stemX = sx; P.barY = (jtype(d.j) !== 0 && bw > 0.3 * W) ? by : null;
+      }
       this.sm.push({ ch, d, L, parts });
       for (const r in parts) { const k = L + r; (acc[k] = acc[k] || []).push(parts[r].bb); }
     }
@@ -468,11 +549,21 @@ class Composer {
     this.byKey = {};
     for (const s of this.sm) for (const r in s.parts) { const idx = r === 'c' ? s.d.c : r === 'v' ? s.d.j : s.d.f; (this.byKey[r + idx] = this.byKey[r + idx] || []).push(s); }
   }
+  get G() { return Math.min(2.6, 740 / this.T.size); }
+  globalFn() { const T = this.T, g = this.G; return (x, y) => [500 + (x - T.cx) * g, 480 + (y - T.cy) * g]; }
+  normFn(b) {
+    const G = this.globalFn();
+    if (!b) return G;
+    const size = Math.max(b.x1 - b.x0, b.y1 - b.y0, 1), k = this.norm;
+    const s = Math.pow(this.T.size / size, k), cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2;
+    const tx = cx + (this.T.cx - cx) * k, ty = cy + (this.T.cy - cy) * k;
+    return (x, y) => G(tx + (x - cx) * s, ty + (y - cy) * s);
+  }
   normalize(strokes, done) {
     if (!this.T) return strokes;
     if (done) { // 이미 확대된 좌표: 크기만 맞춤
       const b = bboxOf(strokes); if (!b) return strokes;
-      const size = Math.max(b.x1 - b.x0, b.y1 - b.y0, 1), k = this.norm, target = Math.min(2.6, 800 / this.T.size) * this.T.size;
+      const size = Math.max(b.x1 - b.x0, b.y1 - b.y0, 1), k = this.norm, target = this.G * this.T.size;
       const s = Math.pow(target / size, k), cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2;
       const tx = cx + (500 - cx) * k, ty = cy + (480 - cy) * k;
       return moveS(strokes, (x, y) => [tx + (x - cx) * s, ty + (y - cy) * s]);
@@ -512,7 +603,7 @@ class Composer {
   }
   tbox(bb, f) { if (!bb) return null; const a = f(bb.x0, bb.y0), b = f(bb.x1, bb.y1); return { x0: a[0], y0: a[1], x1: b[0], y1: b[1] }; }
   syllable(ch) {
-    if (this.written[ch] && this.sm.find(s => s.ch === ch)) return this.written[ch].map(x => x.p);
+    if (this.written[ch]) return this.written[ch].orig;
     const d = decomp(ch); if (!d) return null;
     const L = layoutOf(d.j, d.f), t = jtype(d.j);
     const sc = this.pick('c', d.c, d, L), sv = this.pick('v', d.j, d, L), sf = d.f ? this.pick('f', d.f, d, L) : null;
@@ -525,13 +616,19 @@ class Composer {
     else if (t === 1) dy = cb.y1 - cSrc.y1;
     else { dx = (cb.x1 - cSrc.x1) * 0.6; dy = (cb.y1 - cSrc.y1) * 0.6; }
     dx = clamp(dx, 220); dy = clamp(dy, 220);
+    // 초성과 모음이 겹치거나 너무 멀어지지 않게
+    const P = sv.parts.v;
+    if (t !== 1 && P.stemX != null) { const sx = fv(P.stemX, 0)[0]; dx = Math.min(Math.max(dx, cb.x1 + 5 - sx), cb.x1 + 230 - sx); }
+    if (t === 1 && P.barY != null) { const by = fv(0, P.barY)[1]; dy = Math.min(Math.max(dy, cb.y1 + 25 - by), cb.y1 + 260 - by); }
     const V = moveS(sv.parts.v.s, (x, y) => { const q = fv(x, y); return [q[0] + dx, q[1] + dy]; });
+    if (this.debug) { this.lastSrc = { c: sc.ch, v: sv.ch, f: sf && sf.ch }; C.forEach(x => x.r = 'c'); V.forEach(x => x.r = 'v'); }
     let all = C.concat(V);
     if (d.f) {
       const ff = this.xf(sf, 'f', L);
       const upT = uni(cb, bboxOf(V));
       const upS = uni(this.tbox(sf.parts.c.bb, ff), this.tbox(sf.parts.v.bb, ff));
-      const ddy = clamp(upT.y1 - upS.y1, 220), ddx = clamp(((upT.x0 + upT.x1) - (upS.x0 + upS.x1)) / 4, 150);
+      let ddy = clamp(upT.y1 - upS.y1, 220); const ddx = clamp(((upT.x0 + upT.x1) - (upS.x0 + upS.x1)) / 4, 150);
+      const fT = this.tbox(sf.parts.f.bb, ff); ddy = Math.max(ddy, upT.y1 - 45 - fT.y0);
       all = all.concat(moveS(sf.parts.f.s, (x, y) => { const q = ff(x, y); return [q[0] + ddx, q[1] + ddy]; }));
     }
     // 칸 밖으로 많이 나가면 살짝 줄이기
@@ -559,7 +656,7 @@ class Composer {
     if (vi >= 0) { s = this.pick('v', vi, { c: 11 }, jtype(vi) * 2); r = 'v'; box = [200, 100, 800, 900]; }
     return s ? this.fit(s.parts[r].s, box) : null;
   }
-  symbol(ch) { const w = this.written[ch]; return w && w.length ? w.map(x => x.p) : null; }
+  symbol(ch) { const w = this.written[ch]; return w && w.orig.length ? w.orig : null; }
   glyph(ch) {
     const c = ch.charCodeAt(0);
     if (c >= 0xAC00 && c <= 0xD7A3) return this.syllable(ch);
@@ -779,10 +876,12 @@ if (typeof module !== 'undefined') module.exports = { CHO, JUNG, JONG, SYMBOLS, 
 const $ = id => document.getElementById(id);
 const COL = { c: '#2f6fde', v: '#169a5a', f: '#e0791b', x: '#23211c' };
 const KEY = 'handfont-v2';
-const DEF = { v: 2, mode: 'basic', sym: false, touch: false, guide: false, size: 'm', phr: {}, custom: [], name: '', weight: 30, press: true, norm: 80, quotes: true };
+const DEF = { v: 2, mode: 'basic', sym: false, touch: false, guide: false, size: 'm', phr: {}, custom: [], name: '', weight: 30, press: true, norm: 80, quotes: true, more: true };
 let S = Object.assign({}, DEF);
 try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s && s.phr) S = Object.assign({}, DEF, s); } catch (e) {}
+function cleanState() { for (const k of Object.keys(S.phr || {})) { S.phr[k] = S.phr[k].filter(st => !isJunk(st)); if (!S.phr[k].length) delete S.phr[k]; } }
 function persist() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+try { cleanState(); } catch (e) {}
 function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('on'), 1800); }
 const hcount = p => [...p].filter(c => decomp(c)).length;
 $('nBasic').textContent = LISTS.basic.reduce((a, p) => a + hcount(p), 0);
@@ -792,6 +891,7 @@ let list = [], cur = 0;
 function buildList() {
   list = LISTS.basic.slice();
   if (S.mode === 'full') list = list.concat(LISTS.extra);
+  if (S.more) list = list.concat(MORE);
   if (S.quotes) list = list.concat(QUOTES.map(q => q[0]));
   list = list.concat(S.custom);
   if (S.sym) list = list.concat(SYM_PHRASES);
@@ -802,7 +902,7 @@ const done = p => S.phr[p] && S.phr[p].length;
 const splitCache = new Map();
 function splitOf(p) {
   const rec = S.phr[p] || [];
-  const key = p + '|' + rec.length + '|' + rec.map(r => r.fix || '').join('');
+  const key = p + '|' + rec.length + '|' + rec.map(r => (r.fix || '') + JSON.stringify(r.fx || '')).join('');
   const c = splitCache.get(p);
   if (c && c.key === key) return c.v;
   const v = splitPhrase(p, rec); splitCache.set(p, { key, v }); return v;
@@ -810,7 +910,7 @@ function splitOf(p) {
 function writtenMap() {
   const w = {};
   const order = list.concat(Object.keys(S.phr).filter(p => !list.includes(p)));
-  for (const p of order) if (done(p)) for (const cell of splitOf(p)) if (!w[cell.ch]) w[cell.ch] = cell.strokes;
+  for (const p of order) if (done(p)) for (const cell of splitOf(p)) if (!w[cell.ch]) w[cell.ch] = { orig: cell.orig, segs: cell.strokes.filter(s => s.r !== 'k').map(s => ({ r: s.r, p: s.p })) };
   return w;
 }
 
@@ -848,22 +948,26 @@ function drawBg() {
     }
   }
 }
-function rolesOfStrokes() {
-  const rec = S.phr[phrase()] || [], roles = rec.map(() => 'x');
-  if (!checkMode) return roles;
-  for (const c of splitOf(phrase())) c.idx.forEach((k, j) => roles[k] = c.strokes[j].r);
-  return roles;
-}
+function fillPoly(ctx, poly) { ctx.beginPath(); poly.forEach((q, j) => j ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1])); ctx.closePath(); ctx.fill(); }
+function cellX0(c, rec) { return lay.cells[strokeCell(lay, rec[c.idx[0]].p)].x0; }
 function drawInk() {
   const k = cell / 1000;
   ictx.setTransform(dpr * k, 0, 0, dpr * k, 0, 0);
   ictx.clearRect(0, 0, lay.width, 1000);
-  const rec = S.phr[phrase()] || [], roles = rolesOfStrokes();
-  rec.forEach((st, i) => {
-    ictx.fillStyle = COL[roles[i]] || COL.x;
-    const poly = strokeToPoly(st.p, S.weight, S.press);
-    ictx.beginPath(); poly.forEach((q, j) => j ? ictx.lineTo(q[0], q[1]) : ictx.moveTo(q[0], q[1])); ictx.closePath(); ictx.fill();
-  });
+  const rec = S.phr[phrase()] || [];
+  if (!checkMode) {
+    ictx.fillStyle = COL.x;
+    rec.forEach(st => fillPoly(ictx, strokeToPoly(st.p, S.weight, S.press)));
+    return;
+  }
+  // 자모 확인: 꺾이는 곳에서 나눈 조각마다 색칠 (회색 = 글자 잇는 선, 조합에는 안 씀)
+  for (const c of splitOf(phrase())) {
+    const cx0 = cellX0(c, rec);
+    for (const sg of c.strokes) {
+      ictx.fillStyle = sg.r === 'k' ? '#b9b3a6' : (COL[sg.r] || COL.x);
+      fillPoly(ictx, strokeToPoly(sg.p.map(q => [q[0] + cx0, q[1], q[2]]), S.weight, S.press));
+    }
+  }
 }
 
 let penSeen = false, drawing = null;
@@ -896,6 +1000,7 @@ function endStroke(e) {
   if (!drawing || e.pointerId !== drawing.id) return;
   const pts = drawing.pts.map(p => [Math.round(p[0] * 10) / 10, Math.round(p[1] * 10) / 10, Math.round(p[2] * 100) / 100]);
   drawing = null;
+  if (isJunk({ p: pts })) { drawInk(); return; }
   (S.phr[phrase()] = S.phr[phrase()] || []).push({ p: pts });
   persist(); drawInk(); refreshChips(); updateProgress();
 }
@@ -904,16 +1009,18 @@ ink.addEventListener('pointercancel', endStroke);
 
 function fixAt(x, y) {
   const rec = S.phr[phrase()] || [];
-  let bi = -1, bd = 70;
-  rec.forEach((st, i) => { for (const p of st.p) { const d = Math.hypot(p[0] - x, p[1] - y); if (d < bd) { bd = d; bi = i; } } });
-  if (bi < 0) return;
-  const cellIdx = strokeCell(lay, rec[bi].p), ch = lay.cells[cellIdx].ch, d = decomp(ch);
-  if (!d) return;
-  const opts = d.f ? ['c', 'v', 'f'] : ['c', 'v'];
-  const now = rolesOfStrokes()[bi];
-  rec[bi].fix = opts[(opts.indexOf(now) + 1) % opts.length];
+  let best = null, bd = 70;
+  for (const c of splitOf(phrase())) {
+    const cx0 = cellX0(c, rec);
+    for (const sg of c.strokes) for (const p of sg.p) { const d = Math.hypot(p[0] + cx0 - x, p[1] - y); if (d < bd) { bd = d; best = { sg, ch: c.ch }; } }
+  }
+  if (!best) return;
+  const d = decomp(best.ch); if (!d) return;
+  const opts = (d.f ? ['c', 'v', 'f'] : ['c', 'v']).concat('k');
+  const nr = opts[(opts.indexOf(best.sg.r) + 1) % opts.length];
+  const R = rec[best.sg.k]; delete R.fix; R.fx = R.fx || {}; R.fx[best.sg.si] = nr;
   persist(); drawInk();
-  toast('→ ' + { c: '첫소리', v: '모음', f: '받침' }[rec[bi].fix]);
+  toast('→ ' + { c: '첫소리', v: '모음', f: '받침', k: '잇는 선(안 씀)' }[nr]);
 }
 
 $('bUndo').onclick = () => { const a = S.phr[phrase()]; if (a && a.length) { a.pop(); if (!a.length) delete S.phr[phrase()]; persist(); drawInk(); refreshChips(); updateProgress(); } };
@@ -940,10 +1047,11 @@ function go(i) {
 // ---------- 목록 ----------
 function refreshChips() {
   const g = $('chips'); g.innerHTML = '';
-  const nb = LISTS.basic.length, nq = nb + (S.mode === 'full' ? LISTS.extra.length : 0), ne = nq + (S.quotes ? QUOTES.length : 0), nc = ne + S.custom.length;
+  const nb = LISTS.basic.length, nm = nb + (S.mode === 'full' ? LISTS.extra.length : 0), nq = nm + (S.more ? MORE.length : 0), ne = nq + (S.quotes ? QUOTES.length : 0), nc = ne + S.custom.length;
   list.forEach((p, i) => {
     if (i === 0) sec('기본');
     if (i === nb && S.mode === 'full') sec('정밀 (더 자연스러운 조합)');
+    if (i === nm && S.more) sec('자주 쓰는 문장 (많이 쓸수록 내 글씨와 똑같아져요)');
     if (i === nq && S.quotes) sec('시·명언 (천천히 또박또박)');
     if (i === ne && S.custom.length) sec('내 문장');
     if (i === nc && S.sym) sec('숫자·기호');
@@ -961,7 +1069,7 @@ function updateProgress() {
 function setOpts() {
   $('mBasic').classList.toggle('on', S.mode === 'basic'); $('mFull').classList.toggle('on', S.mode === 'full');
   document.querySelectorAll('#sizeSeg button').forEach(b => b.classList.toggle('on', b.dataset.s === S.size));
-  $('optQuote').checked = S.quotes; $('optSym').checked = S.sym; $('optTouch').checked = S.touch; $('optGuide').checked = S.guide;
+  $('optMore').checked = S.more; $('optQuote').checked = S.quotes; $('optSym').checked = S.sym; $('optTouch').checked = S.touch; $('optGuide').checked = S.guide;
   const p = phrase(); buildList();
   let i = list.indexOf(p); if (i < 0) i = 0;
   go(i); updateProgress();
@@ -969,15 +1077,32 @@ function setOpts() {
 $('mBasic').onclick = () => { S.mode = 'basic'; persist(); setOpts(); };
 $('mFull').onclick = () => { S.mode = 'full'; persist(); setOpts(); };
 document.querySelectorAll('#sizeSeg button').forEach(b => b.onclick = () => { S.size = b.dataset.s; persist(); setOpts(); });
+$('optMore').onchange = e => { S.more = e.target.checked; persist(); setOpts(); };
 $('optQuote').onchange = e => { S.quotes = e.target.checked; persist(); setOpts(); };
 $('optSym').onchange = e => { S.sym = e.target.checked; persist(); setOpts(); };
 $('optTouch').onchange = e => { S.touch = e.target.checked; persist(); };
 $('optGuide').onchange = e => { S.guide = e.target.checked; persist(); drawBg(); };
+// 긴 문장은 띄어쓰기 기준으로 한 줄 10칸 이하로 나눔
+function chunkText(t) {
+  const out = [];
+  for (const line of t.split(/\n+/)) {
+    let cur = '';
+    for (let w of line.trim().split(/\s+/).filter(Boolean)) {
+      while ([...w].length > 10) { if (cur) { out.push(cur); cur = ''; } out.push([...w].slice(0, 10).join('')); w = [...w].slice(10).join(''); }
+      const cand = cur ? cur + ' ' + w : w;
+      if ([...cand.replace(/ /g, '')].length > 10) { out.push(cur); cur = w; } else cur = cand;
+    }
+    if (cur) out.push(cur);
+  }
+  return out;
+}
 $('bAdd').onclick = () => {
-  const t = $('myText').value.trim().replace(/\s+/g, ' ');
-  if (!t) return;
-  if (!S.custom.includes(t) && !list.includes(t)) S.custom.push(t);
-  $('myText').value = ''; persist(); buildList(); go(list.indexOf(t)); updateProgress();
+  const parts = chunkText($('myText').value);
+  if (!parts.length) return;
+  let first = null;
+  for (const t of parts) { if (!S.custom.includes(t) && !list.includes(t)) S.custom.push(t); if (!first) first = t; }
+  $('myText').value = ''; persist(); buildList(); go(Math.max(0, list.indexOf(first))); updateProgress();
+  if (parts.length > 1) toast(parts.length + '줄로 나눠서 추가했어요');
 };
 
 // ---------- 탭 ----------
@@ -996,6 +1121,7 @@ function enterMake() {
   const w = writtenMap(); comp = new Composer(w, S.norm / 100);
   $('sCells').textContent = Object.keys(w).filter(c => decomp(c)).length + '자';
   $('sCover').textContent = comp.coverage().toLocaleString() + ' / 11,172';
+  const fc = FREQ_SYL.filter(c => w[c]).length; $('sFreq').textContent = Math.round(fc / FREQ_SYL.length * 100) + '%';
   drawPreview();
 }
 function drawPreview() {
@@ -1113,7 +1239,7 @@ $('fileIn').onchange = async e => {
   try {
     const o = JSON.parse(await f.text());
     if (!o || typeof o.phr !== 'object') throw new Error('형식');
-    S = Object.assign({}, DEF, o); splitCache.clear();
+    S = Object.assign({}, DEF, o); cleanState(); splitCache.clear();
     persist(); setOpts();
     $('saveMsg').className = 'msg'; $('saveMsg').textContent = `불러왔어요. 쓴 줄 ${Object.keys(S.phr).length}개.`;
   } catch (err) { $('saveMsg').className = 'msg err'; $('saveMsg').textContent = '진행 파일을 읽지 못했어요. 이 앱에서 저장한 .json 파일인지 확인해 주세요.'; }
