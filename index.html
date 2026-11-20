@@ -121,6 +121,7 @@ ol.steps{padding-left:20px;margin:6px 0;font-size:14px;line-height:1.8}
       <label class="field"><span>폰트 이름</span><input type="text" id="fName" maxlength="40" placeholder="예: 민지체"></label>
       <label class="field"><span>글씨 굵기 <b id="wVal"></b></span><input type="range" id="fWeight" min="14" max="80" step="2"></label>
       <label class="field"><span>글씨 크기 맞추기 <b id="nVal"></b></span><input type="range" id="fNorm" min="0" max="100" step="10"></label>
+      <label class="field"><span>받침 없는 글자 크기 <b id="jVal"></b> <small style="color:var(--muted)">(사·니·다처럼 받침 없는 글자를 받침 있는 글자보다 얼마나 작게)</small></span><input type="range" id="fNoJong" min="70" max="100" step="2"></label>
       <label style="font-size:14px;display:flex;gap:6px;align-items:center;margin-bottom:14px"><input type="checkbox" id="fPress"> S펜 필압(누르는 힘) 반영</label>
       <div class="stat"><span>직접 쓴 글자</span><b id="sCells">0</b></div>
       <div class="stat"><span>자주 쓰는 글자 중 직접 쓴 글자</span><b id="sFreq">0</b></div>
@@ -378,8 +379,8 @@ function autoRoles(strokes, d) {
     // 기둥에 붙은 갈고리·꺾임 조각
     for (const i of free()) if (I[i].x0 > stemX0 - 0.03 * W && I[i].cx < stemX1 + 0.05 * W && I[i].cy > stemTop - 0.05 * H && I[i].cy < stemBot - 0.06 * H && I[i].w < 0.3 * W) R[i] = 'v';
     if (LTICK[v]) {
-      const c = free().filter(i => I[i].st > 0.8 && !isV(i) && I[i].x1 > stemX0 - 0.24 * W && I[i].x1 < stemX1 + 0.12 * W && I[i].x0 < stemX0 && I[i].x0 > X0 + 0.12 * W && I[i].cy > stemTop + 0.05 * sH && I[i].cy < stemBot - 0.03 * sH && I[i].w < 0.7 * W)
-        .sort((a, b) => Math.abs(I[a].x1 - stemX0) - Math.abs(I[b].x1 - stemX0));
+      const c = free().filter(i => I[i].st > 0.8 && !isV(i) && I[i].x1 > stemX0 - 0.24 * W && I[i].x1 < stemX1 + 0.12 * W && I[i].x0 < stemX0 && I[i].x0 > X0 + 0.12 * W && I[i].cy > stemTop + 0.05 * sH && I[i].cy < stemBot - 0.03 * sH && I[i].w < 0.8 * W)
+        .sort((a, b) => I[b].x0 - I[a].x0);   // 기둥에 가까이서 시작하는 획을 먼저
       c.slice(0, LTICK[v]).forEach(i => R[i] = 'v');
     }
   }
@@ -495,6 +496,11 @@ function splitPhrase(text, rec) {
       if (prev && next && prev.k === sg.k && next.k === sg.k && prev.r && next.r && prev.r !== next.r) sg.r = 'k';
       else sg.r = (prev && prev.k === sg.k && prev.r) || (next && next.k === sg.k && next.r) || 'c';
     });
+    { // 같은 획에서 초성으로 나뉜 조각과 이어진 부분은 초성으로 (ㅎ 동그라미 아래쪽이 받침으로 가는 것 방지)
+      const cBot = {};
+      for (const sg of segs) if (sg.r === 'c') { const y1 = Math.max(...sg.p.map(q => q[1])); cBot[sg.k] = Math.max(cBot[sg.k] ?? -1e9, y1); }
+      for (const sg of segs) if (sg.r === 'f' && cBot[sg.k] != null && Math.min(...sg.p.map(q => q[1])) < cBot[sg.k]) sg.r = 'c';
+    }
     for (const sg of segs) {
       let L = 0; for (let j = 1; j < sg.p.length; j++) L += Math.hypot(sg.p[j][0] - sg.p[j - 1][0], sg.p[j][1] - sg.p[j - 1][1]);
       if (L < 15 && sg.nseg === 1) sg.r = 'k';   // 실수로 찍힌 점
@@ -520,14 +526,18 @@ const clamp = (v, m) => Math.max(-m, Math.min(m, v));
 class Composer {
   // written: { 글자: [{r, p}] } (칸 좌표 0~1000)
   // written: { 글자: {segs:[{r,p}], orig:[p]} } (칸 좌표 0~1000). orig = 실제 쓴 획(그대로 쓰기용), segs = 자모로 나눈 조각(조합용)
-  constructor(written, norm = 0.8) {
-    this.norm = norm; this.T = null;
+  constructor(written, norm = 0.8, noJong = 0.86) {
+    this.norm = norm; this.noJong = noJong; this.T = null;
     const hs = Object.keys(written).filter(c => decomp(c));
     if (hs.length >= 3) {
       const bs = hs.map(c => bboxOf(written[c].orig)).filter(Boolean);
       const med = a => { const b = a.slice().sort((x, y) => x - y); return b[b.length >> 1]; };
       this.T = { size: med(bs.map(b => Math.max(b.x1 - b.x0, b.y1 - b.y0))), cx: med(bs.map(b => (b.x0 + b.x1) / 2)), cy: med(bs.map(b => (b.y0 + b.y1) / 2)),
         h: med(bs.map(b => b.y1 - b.y0)), w: med(bs.map(b => b.x1 - b.x0)) };
+      { // 받침 있는 글자들의 중간 키 = 기준 키
+        const bj = hs.filter(c => decomp(c).f).map(c => bboxOf(written[c].orig)).filter(Boolean);
+        this.T.sj = bj.length >= 3 ? med(bj.map(b => Math.sqrt((b.x1 - b.x0) * (b.y1 - b.y0)))) : Math.sqrt(this.T.w * this.T.h) * 1.05;
+      }
       // 같은 모양(세로모음/가로모음/받침 유무)끼리의 중간 크기 → 글자 키를 고르게
       this.TL = [];
       for (let L = 0; L < 6; L++) {
@@ -572,9 +582,13 @@ class Composer {
   scaleFor(w, h, L, unit) {
     w = Math.max(w, 1); h = Math.max(h, 1);
     const tl = L != null && this.TL[L];
-    const T = this.T, Ht = (tl ? tl.h * 0.5 + T.h * 0.5 : T.h) * unit, Wt = (tl ? tl.w : T.w) * unit;
-    const t = L == null ? 0 : (L >> 1);
-    let r = t === 1 ? Math.sqrt((Ht / h) * (Wt / w)) : Ht / h;
+    // 눈에 보이는 크기(√가로×세로)를 맞춤: 받침 있는 글자 기준, 받침 없는 글자는 조금 작게 (실제 한글 폰트의 비율)
+    const T = this.T;
+    const RATIO = [this.noJong, 1, this.noJong * 0.94, 1, this.noJong * 1.04, 1];
+    const target = (L == null ? Math.sqrt(T.w * T.h) : T.sj * RATIO[L]) * unit;
+    let r = target / Math.sqrt(w * h);
+    // 좁고 긴 글자(니·이·리)가 넓이 맞추기로 너무 길어지지 않게 키 상한
+    if (L != null && !(L & 1) && (L >> 1) !== 1) r = Math.min(r, (target * 0.95) / h);
     r = Math.min(r, (T.size * unit * 1.2) / Math.max(w, h));   // 너무 커지지 않게
     return Math.max(0.55, Math.min(1.8, Math.pow(r, this.norm)));
   }
@@ -610,15 +624,27 @@ class Composer {
   meanBox(L, r) { const s = this.stats[L + r]; if (s) return s; const z = zoneBox(L, r); return { x0: z[0], y0: z[1], x1: z[2], y1: z[3] }; }
   pick(r, idx, d, L) {
     const list = this.byKey[r + idx]; if (!list) return null;
-    let best = null, bs = -1;
+    let best = null, bs = -Infinity;
     for (const s of list) {
       let sc = 0;
+      // 왼쪽 짧은 획이 있는 모음(ㅓㅔㅕㅖㅝㅞ)과 같이 쓴 초성은 그 획이 섞여 있을 수 있어 덜 선호
+      const lt = j => [4, 5, 6, 7, 14, 15].includes(j);
       if (r === 'c') sc = (s.L === L ? 100 : 0) + ((s.L >> 1) === (L >> 1) ? 40 : 0) + ((s.L & 1) === (L & 1) ? 20 : 0) + (s.d.j === d.j ? 10 : 0);
+      // 가로·섞임 모음은 ㅎ·ㅇ(동그라미가 모음에 붙기 쉬움)과 쓴 글자에서 덜 가져옴
       if (r === 'v') sc = (s.L === L ? 100 : 0) + (s.d.c === d.c ? 10 : 0);
+      // 초성과 모음이 많이 겹쳐 쓰인 글자는 자모 구분이 섞였을 수 있어 덜 선호
+      if ((r === "c" || r === "v") && (L >> 1)) sc -= 60 * this.overlap(s);
       if (r === 'f') sc = ((s.L >> 1) === (L >> 1) ? 100 : 0) + (s.d.j === d.j ? 30 : 0) + (s.d.c === d.c ? 5 : 0);
       if (sc > bs) { bs = sc; best = s; }
     }
     return best;
+  }
+  overlap(s) {
+    if (s._ov != null) return s._ov;
+    const a = s.parts.c.bb, b = s.parts.v.bb;
+    const ix = Math.max(0, Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0)), iy = Math.max(0, Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0));
+    const ar = Math.max(1, Math.min((a.x1 - a.x0) * (a.y1 - a.y0), (b.x1 - b.x0) * (b.y1 - b.y0)));
+    return (s._ov = Math.min(1, ix * iy / ar));
   }
   // 다른 배치에서 가져온 부분은 평균 크기·위치 비율로 옮김
   xf(s, r, L) {
@@ -903,7 +929,7 @@ if (typeof module !== 'undefined') module.exports = { CHO, JUNG, JONG, SYMBOLS, 
 const $ = id => document.getElementById(id);
 const COL = { c: '#2f6fde', v: '#169a5a', f: '#e0791b', x: '#23211c' };
 const KEY = 'handfont-v2';
-const DEF = { v: 2, mode: 'basic', sym: false, touch: false, guide: false, size: 'm', phr: {}, custom: [], name: '', weight: 30, press: true, norm: 80, quotes: true, more: true };
+const DEF = { v: 2, mode: 'basic', sym: false, touch: false, guide: false, size: 'm', phr: {}, custom: [], name: '', weight: 30, press: true, norm: 80, quotes: true, more: true, noJong: 84 };
 let S = Object.assign({}, DEF);
 try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s && s.phr) S = Object.assign({}, DEF, s); } catch (e) {}
 function cleanState() { for (const k of Object.keys(S.phr || {})) { S.phr[k] = S.phr[k].filter(st => !isJunk(st)); if (!S.phr[k].length) delete S.phr[k]; } }
@@ -1145,8 +1171,8 @@ document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
 let comp = null, built = null;
 function enterMake() {
   $('fName').value = S.name; $('fWeight').value = S.weight; $('wVal').textContent = S.weight; $('fPress').checked = S.press;
-  $('fNorm').value = S.norm; $('nVal').textContent = normTxt();
-  const w = writtenMap(); comp = new Composer(w, S.norm / 100);
+  $('fNorm').value = S.norm; $('nVal').textContent = normTxt(); $('fNoJong').value = S.noJong; $('jVal').textContent = S.noJong + '%';
+  const w = writtenMap(); comp = new Composer(w, S.norm / 100, S.noJong / 100);
   $('sCells').textContent = Object.keys(w).filter(c => decomp(c)).length + '자';
   $('sCover').textContent = comp.coverage().toLocaleString() + ' / 11,172';
   const fc = FREQ_SYL.filter(c => w[c]).length; $('sFreq').textContent = Math.round(fc / FREQ_SYL.length * 100) + '%';
@@ -1193,7 +1219,8 @@ const reset = () => { built = null; $('bDown').style.display = 'none'; };
 $('pvText').oninput = () => { clearTimeout(pvT); pvT = setTimeout(drawPreview, 150); };
 $('fWeight').oninput = e => { S.weight = +e.target.value; $('wVal').textContent = S.weight; clearTimeout(pvT); pvT = setTimeout(drawPreview, 60); persist(); reset(); };
 const normTxt = () => S.norm === 0 ? '끔 (쓴 그대로)' : S.norm >= 100 ? '최대' : S.norm + '%';
-$('fNorm').oninput = e => { S.norm = +e.target.value; $('nVal').textContent = normTxt(); comp = new Composer(writtenMap(), S.norm / 100); clearTimeout(pvT); pvT = setTimeout(drawPreview, 80); persist(); reset(); };
+$('fNorm').oninput = e => { S.norm = +e.target.value; $('nVal').textContent = normTxt(); comp = new Composer(writtenMap(), S.norm / 100, S.noJong / 100); clearTimeout(pvT); pvT = setTimeout(drawPreview, 80); persist(); reset(); };
+$('fNoJong').oninput = e => { S.noJong = +e.target.value; $('jVal').textContent = S.noJong + '%'; comp = new Composer(writtenMap(), S.norm / 100, S.noJong / 100); clearTimeout(pvT); pvT = setTimeout(drawPreview, 80); persist(); reset(); };
 $('fPress').onchange = e => { S.press = e.target.checked; drawPreview(); persist(); reset(); };
 $('fName').oninput = e => { S.name = e.target.value; persist(); reset(); };
 
@@ -1235,7 +1262,7 @@ $('bBuild').onclick = async () => {
   $('bBuild').disabled = true; $('prog').style.display = 'block'; reset();
   msg.textContent = '폰트를 만들고 있어요… (태블릿에서는 30초쯤 걸릴 수 있어요)';
   try {
-    comp = new Composer(writtenMap(), S.norm / 100);
+    comp = new Composer(writtenMap(), S.norm / 100, S.noJong / 100);
     const r = await makeFont(comp, S.name || '나의 손글씨', S.weight, S.press, p => { $('buildBar').style.width = (p * 100) + '%'; });
     built = r;
     msg.textContent = `완성! 한글 ${r.count.toLocaleString()}자가 들어 있어요 (${(r.bytes.length / 1048576).toFixed(1)}MB).`;
